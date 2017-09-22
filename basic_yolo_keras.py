@@ -9,8 +9,8 @@ import os
 import utils
 
 wt_path = 'tiny-yolo-voc.weights'
-ann_dir = '/home/husky/data/pascal/VOCdevkit/VOC2012/Annotations/'
-img_dir = '/home/husky/data/pascal/VOCdevkit/VOC2012/JPEGImages/'
+ann_dir = '/home/gcx/VOCtrainval_11-May-2012/VOCdevkit/VOC2012/Annotations/'
+img_dir = '/home/gcx/VOCtrainval_11-May-2012/VOCdevkit/VOC2012/JPEGImages/'
 
 execfile('utils.py')
 
@@ -98,3 +98,85 @@ for i in range(len(model.layers)):
 
 # 16
 all_img = parse_annotation(ann_dir)
+
+
+layer = model.layers[-3] # the last convolutional layer
+weights = layer.get_weights()
+
+new_kernel = np.random.normal(size=weights[0].shape)/(GRID_H*GRID_W)
+new_bias = np.random.normal(size=weights[1].shape)/(GRID_H*GRID_W)
+
+layer.set_weights([new_kernel, new_bias])
+
+early_stop = EarlyStopping(monitor='loss', min_delta=0.001, patience=3, mode='min', verbose=1)
+checkpoint = ModelCheckpoint('weights.hdf5', monitor='loss', verbose=1, save_best_only=True, mode='min', period=1)
+
+
+
+
+tb_counter  = max([int(num) for num in os.listdir('../logs/yolo/')] or [0]) + 1
+tensorboard = TensorBoard(log_dir='../logs/yolo/' + str(tb_counter), histogram_freq=0, write_graph=True, write_images=False)
+
+sgd = SGD(lr=0.00001, decay=0.0005, momentum=0.9)
+
+model.compile(loss=custom_loss, optimizer=sgd)#'adagrad')
+model.fit_generator(data_gen(all_img, BATCH_SIZE),
+                    int(len(all_img)/BATCH_SIZE),
+                    epochs = 100,
+                    verbose = 2,
+                    callbacks = [early_stop, checkpoint, tensorboard],
+                    max_q_size = 3)
+
+model.load_weights("weights.hdf5")
+
+image = cv2.imread('images/dog.jpg')
+
+plt.figure(figsize=(10,10))
+
+input_image = cv2.resize(image, (416, 416))
+input_image = input_image / 255.
+input_image = input_image[:,:,::-1]
+input_image = np.expand_dims(input_image, 0)
+
+netout = model.predict(input_image)
+
+#print netout
+image = interpret_netout(image, netout[0])
+plt.imshow(image[:,:,::-1]); plt.show()
+
+
+model.load_weights("weights.hdf5")
+
+
+
+# Detection on video
+video_inp = '../basic-yolo-keras/images/phnom_penh.mp4'
+video_out = '../basic-yolo-keras/images/phnom_penh_bbox.mp4'
+
+video_reader = cv2.VideoCapture(video_inp)
+video_writer = None
+
+while (True):
+    ret, frame = video_reader.read()
+
+    if ret == True:
+        input_image = cv2.resize(frame, (416, 416))
+        input_image = input_image / 255.
+        input_image = input_image[:, :, ::-1]
+        input_image = np.expand_dims(input_image, 0)
+
+        netout = model.predict(input_image)
+
+        frame = interpret_netout(frame, netout[0])
+
+        if video_writer is None:
+            fourcc = cv2.VideoWriter_fourcc(*'XVID')
+            video_writer = cv2.VideoWriter(video_out, fourcc, 50.0, (frame.shape[1], frame.shape[0]))
+
+        video_writer.write(np.uint8(frame))
+
+    else:
+        break
+
+video_reader.release()
+video_writer.release()

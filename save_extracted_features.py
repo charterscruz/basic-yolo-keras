@@ -85,6 +85,8 @@ def _main_(args):
         feature_name = config['feature_extraction']['extracted_features_folder'] + os.path.split(img_entry['filename'])[1][:-4] + '.npy'
         np.save(file = feature_name,
                 arr = features)
+        print(feature_name)
+
 
 
     ###############################

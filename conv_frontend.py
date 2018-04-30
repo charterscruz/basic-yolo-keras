@@ -302,29 +302,30 @@ class YOLO_extractor(object):
 
         # optimizer = Adam(lr=learning_rate, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
         # self.model.compile(loss=self.custom_loss, optimizer=optimizer)
-        x= np.zeros(self.model.input_shape[1:])
-        self.model.predict(x)
 
-        ############################################
-        # Make a few callbacks
-        ############################################
+        # x= np.zeros(self.model.input_shape[1:])
+        # self.model.predict(x)
 
-        early_stop = EarlyStopping(monitor='val_loss', 
-                           min_delta=0.00001, 
-                           patience=5, 
-                           mode='min', 
-                           verbose=1)
-        checkpoint = ModelCheckpoint(saved_weights_name, 
-                                     monitor='val_loss', 
-                                     verbose=1, 
-                                     save_best_only=True, 
-                                     mode='min', 
-                                     period=1)
-        tensorboard = TensorBoard(log_dir=os.path.expanduser('~/logs/'), 
-                                  histogram_freq=0, 
-                                  #write_batch_performance=True,
-                                  write_graph=True, 
-                                  write_images=False)
+        # ############################################
+        # # Make a few callbacks
+        # ############################################
+        #
+        # early_stop = EarlyStopping(monitor='val_loss',
+        #                    min_delta=0.00001,
+        #                    patience=5,
+        #                    mode='min',
+        #                    verbose=1)
+        # checkpoint = ModelCheckpoint(saved_weights_name,
+        #                              monitor='val_loss',
+        #                              verbose=1,
+        #                              save_best_only=True,
+        #                              mode='min',
+        #                              period=1)
+        # tensorboard = TensorBoard(log_dir=os.path.expanduser('~/logs/'),
+        #                           histogram_freq=0,
+        #                           #write_batch_performance=True,
+        #                           write_graph=True,
+        #                           write_images=False)
 
         ############################################
         # Start the training process

@@ -5,6 +5,8 @@ import os
 import numpy as np
 from preprocessing import parse_annotation
 from conv_frontend import YOLO_extractor
+from keras.models import load_model
+from frontend import YOLO
 import json
 import cv2
 
@@ -76,7 +78,14 @@ def _main_(args):
 
     if os.path.exists(config['train']['pretrained_weights']):
         print("Loading pre-trained weights in", config['train']['pretrained_weights'])
+        old_model = YOLO(backend             = config['model']['backend'],
+                         input_size          = config['model']['input_size'],
+                         labels              = config['model']['labels'],
+                         max_box_per_image   = config['model']['max_box_per_image'],
+                         anchors             = config['model']['anchors'])
+        old_model.load_weights(config['train']['pretrained_weights'])
         yolo.load_weights(config['train']['pretrained_weights'])
+        # todo: copy from one layer to another
 
     for img_entry in train_imgs:
         img = cv2.imread(img_entry['filename'])

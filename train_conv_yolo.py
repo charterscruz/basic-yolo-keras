@@ -64,7 +64,7 @@ def _main_(args):
     #   Construct the model 
     ###############################
 
-    yolo = YOLO_extractor(backend             = config['model']['backend'],
+    yolo = YOLO_ConvLSTM(backend             = config['model']['backend'],
                           input_size          = config['model']['input_size'],
                           labels              = config['model']['labels'],
                           max_box_per_image   = config['model']['max_box_per_image'],
@@ -92,7 +92,7 @@ def _main_(args):
     ###############################
     #   Start the training process
     ###############################
-    #
+    # 
     # yolo.train(train_imgs         = train_imgs,
     #            valid_imgs         = valid_imgs,
     #            train_times        = config['train']['train_times'],
@@ -107,6 +107,7 @@ def _main_(args):
     #            class_scale        = config['train']['class_scale'],
     #            saved_weights_name = config['train']['saved_weights_name'],
     #            debug              = config['train']['debug'])
+
 
 if __name__ == '__main__':
     args = argparser.parse_args()

@@ -88,7 +88,6 @@ def custom_loss(y_true, y_pred):
     return loss
 
 
-
 wt_path = 'tiny-yolo-voc.weights'
 ann_dir = '/home/gcx/VOCtrainval_11-May-2012/VOCdevkit/VOC2012/Annotations/'
 img_dir = '/home/gcx/VOCtrainval_11-May-2012/VOCdevkit/VOC2012/JPEGImages/'

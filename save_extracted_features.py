@@ -10,8 +10,8 @@ from frontend import YOLO
 import json
 import cv2
 
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 argparser = argparse.ArgumentParser(
     description='Train and validate YOLO_v2 model on any dataset')
@@ -66,7 +66,7 @@ def _main_(args):
     #   Construct the model 
     ###############################
 
-    yolo = YOLO_extractor(backend             = config['model']['backend'],
+    yolo_extractor = YOLO_extractor(backend             = config['model']['backend'],
                           input_size          = config['model']['input_size'],
                           labels              = config['model']['labels'],
                           max_box_per_image   = config['model']['max_box_per_image'],
@@ -84,13 +84,14 @@ def _main_(args):
                          max_box_per_image   = config['model']['max_box_per_image'],
                          anchors             = config['model']['anchors'])
         old_model.load_weights(config['train']['pretrained_weights'])
-        yolo.load_weights(config['train']['pretrained_weights'])
-        # todo: copy from one layer to another
+
+        # copy weights all at once
+        yolo_extractor.model.layers[1].set_weights(old_model.model.layers[1].get_weights())
 
     for img_entry in train_imgs:
         img = cv2.imread(img_entry['filename'])
         # features = yolo.predict(img)
-        features = yolo.model.predict(np.reshape(img, (-1, img.shape[0], img.shape[1], img.shape[2])))
+        features = yolo_extractor.model.predict(np.reshape(img, (-1, img.shape[0], img.shape[1], img.shape[2])))
         feature_name = config['feature_extraction']['extracted_features_folder'] + os.path.split(img_entry['filename'])[1][:-4] + '.npy'
         np.save(file = feature_name,
                 arr = features)

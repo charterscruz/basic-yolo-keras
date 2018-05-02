@@ -5,6 +5,7 @@ import os
 import numpy as np
 from preprocessing import parse_annotation
 from conv_frontend import YOLO_extractor
+from frontend import YOLO_ConvLSTM
 import json
 import cv2
 
@@ -92,21 +93,21 @@ def _main_(args):
     ###############################
     #   Start the training process
     ###############################
-    # 
-    # yolo.train(train_imgs         = train_imgs,
-    #            valid_imgs         = valid_imgs,
-    #            train_times        = config['train']['train_times'],
-    #            valid_times        = config['valid']['valid_times'],
-    #            nb_epochs          = config['train']['nb_epochs'],
-    #            learning_rate      = config['train']['learning_rate'],
-    #            batch_size         = config['train']['batch_size'],
-    #            warmup_epochs      = config['train']['warmup_epochs'],
-    #            object_scale       = config['train']['object_scale'],
-    #            no_object_scale    = config['train']['no_object_scale'],
-    #            coord_scale        = config['train']['coord_scale'],
-    #            class_scale        = config['train']['class_scale'],
-    #            saved_weights_name = config['train']['saved_weights_name'],
-    #            debug              = config['train']['debug'])
+
+    yolo.train(train_imgs         = train_imgs,
+               valid_imgs         = valid_imgs,
+               train_times        = config['train']['train_times'],
+               valid_times        = config['valid']['valid_times'],
+               nb_epochs          = config['train']['nb_epochs'],
+               learning_rate      = config['train']['learning_rate'],
+               batch_size         = config['train']['batch_size'],
+               warmup_epochs      = config['train']['warmup_epochs'],
+               object_scale       = config['train']['object_scale'],
+               no_object_scale    = config['train']['no_object_scale'],
+               coord_scale        = config['train']['coord_scale'],
+               class_scale        = config['train']['class_scale'],
+               saved_weights_name = config['train']['saved_weights_name'],
+               debug              = config['train']['debug'])
 
 
 if __name__ == '__main__':

@@ -13,6 +13,8 @@ from preprocessing import BatchGenerator
 from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from backend import TinyYoloFeature, FullYoloFeature, MobileNetFeature, SqueezeNetFeature, Inception3Feature, VGG16Feature, ResNet50Feature
 
+
+# class provided in the original repository
 class YOLO(object):
     def __init__(self, backend,
                        input_size, 
@@ -470,3 +472,5 @@ class YOLO(object):
         boxes  = decode_netout(netout, self.anchors, self.nb_class)
 
         return boxes
+
+

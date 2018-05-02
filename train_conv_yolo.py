@@ -3,9 +3,8 @@
 import argparse
 import os
 import numpy as np
-from preprocessing import parse_annotation
-from conv_frontend import YOLO_extractor
-from frontend import YOLO_ConvLSTM
+from preprocessing import parse_annotation_features
+from conv_frontend import YoloConvLSTM
 import json
 import cv2
 
@@ -31,13 +30,13 @@ def _main_(args):
     ###############################
 
     # parse annotations of the training set
-    train_imgs, train_labels = parse_annotation(config['train']['train_annot_folder'], 
+    train_imgs, train_labels = parse_annotation_features(config['train']['train_annot_folder'],
                                                 config['train']['train_image_folder'], 
                                                 config['model']['labels'])
 
     # parse annotations of the validation set, if any, otherwise split the training set
     if os.path.exists(config['valid']['valid_annot_folder']):
-        valid_imgs, valid_labels = parse_annotation(config['valid']['valid_annot_folder'], 
+        valid_imgs, valid_labels = parse_annotation_features(config['valid']['valid_annot_folder'],
                                                     config['valid']['valid_image_folder'], 
                                                     config['model']['labels'])
     else:
@@ -64,37 +63,17 @@ def _main_(args):
     ###############################
     #   Construct the model 
     ###############################
-
-    yolo = YOLO_ConvLSTM(backend             = config['model']['backend'],
+    yolo_conv_lstm = YoloConvLSTM(backend             = config['model']['backend'],
                           input_size          = config['model']['input_size'],
                           labels              = config['model']['labels'],
                           max_box_per_image   = config['model']['max_box_per_image'],
                           anchors             = config['model']['anchors'])
 
-    ###############################
-    #   Load the pretrained weights (if any) 
-    ###############################    
-
-    if os.path.exists(config['train']['pretrained_weights']):
-        print("Loading pre-trained weights in", config['train']['pretrained_weights'])
-        yolo.load_weights(config['train']['pretrained_weights'])
-
-    for img_entry in train_imgs:
-        img = cv2.imread(img_entry['filename'])
-        # features = yolo.predict(img)
-        features = yolo.model.predict(np.reshape(img, (-1, img.shape[0], img.shape[1], img.shape[2])))
-        feature_name = config['feature_extraction']['extracted_features_folder'] + os.path.split(img_entry['filename'])[1][:-4] + '.npy'
-        np.save(file = feature_name,
-                arr = features)
-        print(feature_name)
-
-
 
     ###############################
     #   Start the training process
     ###############################
-
-    yolo.train(train_imgs         = train_imgs,
+    yolo_conv_lstm.train(train_imgs         = train_imgs,
                valid_imgs         = valid_imgs,
                train_times        = config['train']['train_times'],
                valid_times        = config['valid']['valid_times'],

@@ -4,7 +4,7 @@ import argparse
 import os
 import numpy as np
 from preprocessing import parse_annotation
-from conv_frontend import YOLO_extractor
+from conv_frontend import YoloExtractor
 from keras.models import load_model
 from frontend import YOLO
 import json
@@ -36,17 +36,7 @@ def _main_(args):
                                                 config['train']['train_image_folder'], 
                                                 config['model']['labels'])
 
-    # parse annotations of the validation set, if any, otherwise split the training set
-    if os.path.exists(config['valid']['valid_annot_folder']):
-        valid_imgs, valid_labels = parse_annotation(config['valid']['valid_annot_folder'], 
-                                                    config['valid']['valid_image_folder'], 
-                                                    config['model']['labels'])
-    else:
-        train_valid_split = int(0.8*len(train_imgs))
-        np.random.shuffle(train_imgs)
 
-        valid_imgs = train_imgs[train_valid_split:]
-        train_imgs = train_imgs[:train_valid_split]
 
     if len(config['model']['labels']) > 0:
         overlap_labels = set(config['model']['labels']).intersection(set(train_labels.keys()))
@@ -66,7 +56,7 @@ def _main_(args):
     #   Construct the model 
     ###############################
 
-    yolo_extractor = YOLO_extractor(backend             = config['model']['backend'],
+    yolo_extractor = YoloExtractor(backend             = config['model']['backend'],
                           input_size          = config['model']['input_size'],
                           labels              = config['model']['labels'],
                           max_box_per_image   = config['model']['max_box_per_image'],
@@ -89,20 +79,21 @@ def _main_(args):
         yolo_extractor.model.layers[1].set_weights(old_model.model.layers[1].get_weights())
 
     for img_entry in train_imgs:
-        img = cv2.imread(img_entry['filename'])
-        # features = yolo.predict(img)
-        features = yolo_extractor.model.predict(np.reshape(img, (-1, img.shape[0], img.shape[1], img.shape[2])))
-        feature_name = config['feature_extraction']['extracted_features_folder'] + os.path.split(img_entry['filename'])[1][:-4] + '.npy'
-        np.save(file = feature_name,
-                arr = features)
-        print(feature_name)
+        config['feature_extraction']['extracted_features_folder']
+        feature_name = config['feature_extraction']['extracted_features_folder'] + \
+                       os.path.split(img_entry['filename'])[1][:-4] + '.npy'
+        if os.path.isfile(feature_name):
+            print('already exists: ', feature_name )
+            pass # already exists. Don't have to do anything
+        else:
+            img = cv2.imread(img_entry['filename'])
+            # features = yolo.predict(img)
+            features = yolo_extractor.model.predict(np.reshape(img, (-1, img.shape[0], img.shape[1], img.shape[2])))
+            np.save(file = feature_name, arr = features)
+            print(feature_name)
 
 
 
-    ###############################
-    #   Start the training process
-    ###############################
-    #
     # yolo.train(train_imgs         = train_imgs,
     #            valid_imgs         = valid_imgs,
     #            train_times        = config['train']['train_times'],

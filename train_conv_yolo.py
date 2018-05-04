@@ -3,7 +3,7 @@
 import argparse
 import os
 import numpy as np
-from preprocessing import parse_annotation_features
+from preprocessing import parse_annotation_features_sequences
 from conv_frontend import YoloConvLSTM
 import json
 import cv2
@@ -30,15 +30,18 @@ def _main_(args):
     ###############################
 
     # parse annotations of the training set
-    train_imgs, train_labels = parse_annotation_features(config['train']['train_annot_folder'],
-                                                config['train']['train_image_folder'], 
-                                                config['model']['labels'])
+    train_imgs, train_labels = parse_annotation_features_sequences(
+        config['train']['train_annot_folder'],
+        config['train']['train_image_folder'],
+        config['model']['input_time_horizon'],
+        config['model']['labels'])
 
     # parse annotations of the validation set, if any, otherwise split the training set
     if os.path.exists(config['valid']['valid_annot_folder']):
-        valid_imgs, valid_labels = parse_annotation_features(config['valid']['valid_annot_folder'],
-                                                    config['valid']['valid_image_folder'], 
-                                                    config['model']['labels'])
+        valid_imgs, valid_labels = parse_annotation_features_sequences(
+            config['valid']['valid_annot_folder'],
+            config['valid']['valid_image_folder'],
+            config['model']['labels'])
     else:
         train_valid_split = int(0.8*len(train_imgs))
         np.random.shuffle(train_imgs)
@@ -64,10 +67,11 @@ def _main_(args):
     #   Construct the model 
     ###############################
     yolo_conv_lstm = YoloConvLSTM(backend             = config['model']['backend'],
-                          input_size          = config['model']['input_size'],
-                          labels              = config['model']['labels'],
-                          max_box_per_image   = config['model']['max_box_per_image'],
-                          anchors             = config['model']['anchors'])
+                                  input_size          = config['model']['input_size'],
+                                  input_time_horizon  = config['model']['input_time_horizon'],
+                                  labels              = config['model']['labels'],
+                                  max_box_per_image   = config['model']['max_box_per_image'],
+                                  anchors             = config['model']['anchors'])
 
 
     ###############################

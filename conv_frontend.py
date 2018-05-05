@@ -174,8 +174,10 @@ class YoloConvLSTM(object):
     def custom_loss(self, y_true, y_pred):
         mask_shape = tf.shape(y_true)[:4]
 
+        # cell_x = tf.to_float(
+        #     tf.reshape(tf.tile(tf.range(self.grid_w), [self.grid_h]), (1, self.grid_h, self.grid_w, 1, 1)))
         cell_x = tf.to_float(
-            tf.reshape(tf.tile(tf.range(self.grid_w), [self.grid_h]), (1, self.grid_h, self.grid_w, 1, 1)))
+            tf.reshape(tf.tile(tf.range(self.input_size), [self.input_size]), (1, self.input_size, self.input_size, 1, 1)))
         cell_y = tf.transpose(cell_x, (0, 2, 1, 3, 4))
 
         cell_grid = tf.tile(tf.concat([cell_x, cell_y], -1), [self.batch_size, 1, 1, self.nb_box, 1])
@@ -327,7 +329,6 @@ class YoloConvLSTM(object):
             loss = tf.Print(loss, [total_recall / seen], message='Average Recall \t', summarize=1000)
 
         return loss
-
 
     def custom_loss_sequence(self, y_true, y_pred):
         mask_shape = tf.shape(y_true)[:4]
@@ -497,7 +498,6 @@ class YoloConvLSTM(object):
 
         return loss
 
-
     def load_weights(self, weight_path):
         self.model.load_weights(weight_path)
 
@@ -602,8 +602,8 @@ class YoloConvLSTM(object):
                                  validation_data=valid_generator,
                                  validation_steps=len(valid_generator) * valid_times,
                                  callbacks=[early_stop, checkpoint, tensorboard],
-                                 workers=3,
-                                 max_queue_size=8)
+                                 workers=1,  # eram 3
+                                 max_queue_size=1) # eram 8
 
         ############################################
         # Compute mAP on the validation set

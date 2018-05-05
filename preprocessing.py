@@ -73,6 +73,7 @@ def parse_annotation_features(ann_dir, img_dir, labels=[]):
         for elem in tree.iter():
             if 'filename' in elem.tag:
                 # img['filename'] = img_dir + elem.text
+                print img_dir + elem.text[:-4] + '.npy'
                 img['filename'] = img_dir + elem.text[:-4] + '.npy'
             if 'width' in elem.tag:
                 img['width'] = int(elem.text)
@@ -132,15 +133,16 @@ def parse_annotation_features_sequences(ann_dir, img_dir, time_horizon, labels=[
                     # print os.path.isfile(img_dir +
                     #                           str(int(elem.text[:-4]) + img_idx ) + '.npy')
                     if os.path.isfile(img_dir +
-                                              str(int(elem.text[:-4]) + img_idx ) + '.npy'):
+                                      str(int(elem.text[:-4]) + img_idx ) + '.npy'):
                         pass
                     else:
                         exists = False
 
                     if not exists:
                         print('should quit cycle')
+                        img['filename'] = []
                         break
-                    if img_idx == time_horizon -1:
+                    if img_idx == time_horizon - 1:
                         print('exists sequence')
                         img['filename'] = img_dir + elem.text[:-4] + '.npy'
 
@@ -177,11 +179,10 @@ def parse_annotation_features_sequences(ann_dir, img_dir, time_horizon, labels=[
                             if 'ymax' in dim.tag:
                                 obj['ymax'] = int(round(float(dim.text)))
 
-        if len(img['object']) > 0:
+        if len(img['object']) > 0 and len(img['filename']) > 0:
             all_imgs += [img]
 
     return all_imgs, seen_labels
-
 
 
 # Class for batch generator for common images
@@ -780,25 +781,21 @@ class BatchGeneratorFeatureSequences(Sequence):
                             self.config['IMAGE_W'],
                             1024))  # input images
         b_batch = np.zeros((r_bound - l_bound,
-                            self.config['TIME_HORIZON'],
-                            1, 1,
+                            1, 1, 1,
                             self.config['TRUE_BOX_BUFFER'],
                             4))  # list of self.config['TRUE_self.config['BOX']_BUFFER'] GT boxes
         y_batch = np.zeros((r_bound - l_bound,
-                            self.config['TIME_HORIZON'],
                             self.config['GRID_H'],
                             self.config['GRID_W'],
                             self.config['BOX'],
                             4 + 1 + len(self.config['LABELS'])))  # desired network output
 
         for train_instance in self.images[l_bound:r_bound]:
+            gt_instance = self.images[l_bound + instance_count + self.config['TIME_HORIZON']]
             # augment input image and fix object's position and size
-            img, all_objs = self.aug_sequences(train_instance,
+            img, all_objs = self.aug_sequences(train_instance, gt_instance,
                                                jitter=self.jitter,
                                                time_horizon= self.config['TIME_HORIZON'])
-
-            # todo data should be loaded in sequences
-            # todo gt should also be loaded in sequences
 
             # construct output from object's x, y, w, h
             true_box_index = 0
@@ -894,15 +891,13 @@ class BatchGeneratorFeatureSequences(Sequence):
 
         return feature_image, all_objs
 
-    def aug_sequences(self, train_instance, jitter, time_horizon):
-        feature_image_sequence = []
+    def aug_sequences(self, train_instance, gt_instance, jitter, time_horizon):
+        feature_image_sequence = np.empty((0,13,13,1024))
 
         for i in range(time_horizon):
-            print(train_instance['filename'])
             image_name = train_instance['filename']
-            # image = cv2.imread(image_name)
-            # print('about to load image: ', train_instance['filename'])
-            feature_image = np.load(image_name)
+            name_to_load = os.path.split(image_name)[0] + '/' + str(int(os.path.split(image_name)[1][:-4]) + i) + '.npy'
+            feature_image = np.load(name_to_load)
 
             if feature_image is None: print('Cannot find ', image_name)
 
@@ -910,13 +905,14 @@ class BatchGeneratorFeatureSequences(Sequence):
 
             feature_image_sequence = np.vstack((feature_image_sequence, feature_image))
 
-        all_objs = copy.deepcopy(train_instance['object'])
+        # todo: here I should load the last objects in the sequence and not the first
+        # all_objs = copy.deepcopy(train_instance['object'])
+        all_objs = copy.deepcopy(gt_instance['object'])
 
         # image = cv2.resize(feature_image, (self.config['IMAGE_H'], self.config['IMAGE_W']))
         # np.resize(feature_image, (self.config['IMAGE_H'], self.config['IMAGE_W'], c))
         np.resize(feature_image_sequence, (time_horizon, self.config['IMAGE_H'], self.config['IMAGE_W'], c))
         feature_image_sequence = feature_image_sequence[:, :, :, ::-1]
-
 
         # fix object's position and size
         for obj in all_objs:

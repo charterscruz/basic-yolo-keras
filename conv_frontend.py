@@ -594,7 +594,7 @@ class YoloConvLSTM(object):
         # Start the training process
         ############################################
 
-        print('about to start fit_generator')
+        print('start fit_generator')
         self.model.fit_generator(generator=train_generator,
                                  steps_per_epoch=len(train_generator) * train_times,
                                  epochs=warmup_epochs + nb_epochs,
@@ -602,8 +602,8 @@ class YoloConvLSTM(object):
                                  validation_data=valid_generator,
                                  validation_steps=len(valid_generator) * valid_times,
                                  callbacks=[early_stop, checkpoint, tensorboard],
-                                 workers=1,  # eram 3
-                                 max_queue_size=1) # eram 8
+                                 workers=3,
+                                 max_queue_size=8)
 
         ############################################
         # Compute mAP on the validation set

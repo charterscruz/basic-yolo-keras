@@ -9,6 +9,8 @@ from preprocessing import parse_annotation
 from utils import draw_boxes
 from frontend import YOLO
 import json
+import glob
+import os
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
@@ -38,8 +40,14 @@ def _main_(args):
 
     # width = 1024
     # height = 768
+    # width = 1920
+    # height = 1080
     width = 1920
     height = 1080
+
+    map_size = 13
+
+    time_horizon = 10
 
     with open(config_path) as config_buffer:    
         config = json.load(config_buffer)
@@ -107,13 +115,30 @@ def _main_(args):
         video_writer.release()
 
     else:
-        image = cv2.imread(image_path)
-        boxes = yolo.predict(image)
-        image = draw_boxes(image, boxes, config['model']['labels'])
+
+        for feature_img in glob.glob(image_path):
+            image = np.zeros(time_horizon, map_size, map_size, 1024)
+            predict = True
+            for tim_idx in range(0, time_horizon):
+                # check if image exists
+                name_to_load = str(int(feature_img) + tim_idx)
+                if os.path.isfile(name_to_load):
+                    # load feature "image"
+                    image[tim_idx, :, :, :] = np.load()
+                else:
+                    predict = False
+                    break
+
+            if predict:
+                #predict based on that image feature sequence
+                boxes = yolo.predict(image)
+            #load ground truth
+            # compare predictions with GT
+            image = draw_boxes(image, boxes, config['model']['labels'])
 
         print(len(boxes), 'boxes are found')
 
-        cv2.imwrite(image_path[:-4] + '_detected' + image_path[-4:], image)
+        # cv2.imwrite(image_path[:-4] + '_detected' + image_path[-4:], image)
 
 
 

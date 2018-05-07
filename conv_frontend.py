@@ -575,7 +575,7 @@ class YoloConvLSTM(object):
 
         early_stop = EarlyStopping(monitor='val_loss',
                                    min_delta=0.00001,
-                                   patience=5,
+                                   patience=20,
                                    mode='min',
                                    verbose=1)
         checkpoint = ModelCheckpoint(saved_weights_name,
@@ -602,8 +602,8 @@ class YoloConvLSTM(object):
                                  validation_data=valid_generator,
                                  validation_steps=len(valid_generator) * valid_times,
                                  callbacks=[early_stop, checkpoint, tensorboard],
-                                 workers=1, #3
-                                 max_queue_size=0)   #8
+                                 workers=4, #3
+                                 max_queue_size=8)   #8
 
         ############################################
         # Compute mAP on the validation set

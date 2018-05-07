@@ -727,15 +727,17 @@ class YoloConvLSTM(object):
         return average_precisions
 
     def predict(self, image):
-        image_h, image_w, _ = image.shape
-        image = cv2.resize(image, (self.input_size, self.input_size))
-        image = self.feature_extractor.normalize(image)
+        # image_h, image_w, _ = image.shape
+        # image = cv2.resize(image, (self.input_size, self.input_size))
+        # image = self.feature_extractor.normalize(image)
 
-        input_image = image[:, :, ::-1]
-        input_image = np.expand_dims(input_image, 0)
+        # input_image = image[:, :, ::-1]
+        # input_image = np.expand_dims(input_image, 0)
         dummy_array = np.zeros((1, 1, 1, 1, self.max_box_per_image, 4))
 
-        netout = self.model.predict([input_image, dummy_array])[0]
+        image = np.reshape(image, (-1, 10, 13, 13, 1024))
+
+        netout = self.model.predict([image, dummy_array])[0]
         # print(netout)
         boxes = decode_netout(netout, self.anchors, self.nb_class)
 

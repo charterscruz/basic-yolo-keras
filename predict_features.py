@@ -8,12 +8,13 @@ from tqdm import tqdm
 from preprocessing import parse_annotation
 from utils import draw_boxes
 from frontend import YOLO
+from conv_frontend import YoloConvLSTM
 import json
 import glob
 import os
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 argparser = argparse.ArgumentParser(
     description='Train and validate YOLO_v2 model on any dataset')
@@ -56,11 +57,18 @@ def _main_(args):
     #   Make the model 
     ###############################
 
-    yolo = YOLO(backend             = config['model']['backend'],
-                input_size          = config['model']['input_size'], 
-                labels              = config['model']['labels'], 
-                max_box_per_image   = config['model']['max_box_per_image'],
-                anchors             = config['model']['anchors'])
+    # yolo = YOLO(backend             = config['model']['backend'],
+    #             input_size          = config['model']['input_size'],
+    #             labels              = config['model']['labels'],
+    #             max_box_per_image   = config['model']['max_box_per_image'],
+    #             anchors             = config['model']['anchors'])
+
+    yolo = YoloConvLSTM(backend=config['model']['backend'],
+                        input_size=config['model']['input_size'],
+                        input_time_horizon=time_horizon,
+                        labels=config['model']['labels'],
+                        max_box_per_image=config['model']['max_box_per_image'],
+                        anchors=config['model']['anchors'])
 
     ###############################
     #   Load trained weights
@@ -116,15 +124,18 @@ def _main_(args):
 
     else:
 
-        for feature_img in glob.glob(image_path):
-            image = np.zeros(time_horizon, map_size, map_size, 1024)
+        for feature_img in glob.glob(image_path + '*.npy'):
+            image = np.zeros((time_horizon, map_size, map_size, 1024))
             predict = True
+            folder_name = os.path.split(feature_img)[0]
+            file_name = os.path.split(feature_img)[1]
+
             for tim_idx in range(0, time_horizon):
                 # check if image exists
-                name_to_load = str(int(feature_img) + tim_idx)
-                if os.path.isfile(name_to_load):
+                name_to_load = str(int(file_name[:-4]) + tim_idx) + '.npy'
+                if os.path.isfile(folder_name + '/' + name_to_load):
                     # load feature "image"
-                    image[tim_idx, :, :, :] = np.load()
+                    image[tim_idx, :, :, :] = np.load(folder_name + '/' + file_name)
                 else:
                     predict = False
                     break
@@ -132,9 +143,11 @@ def _main_(args):
             if predict:
                 #predict based on that image feature sequence
                 boxes = yolo.predict(image)
-            #load ground truth
-            # compare predictions with GT
-            image = draw_boxes(image, boxes, config['model']['labels'])
+                #load ground truth
+                # todo print boxes, instead of drawing them
+
+                # compare predictions with GT
+                image = draw_boxes(image, boxes, config['model']['labels'])
 
         print(len(boxes), 'boxes are found')
 

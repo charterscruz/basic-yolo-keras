@@ -4,7 +4,7 @@ import argparse
 import os
 import numpy as np
 from preprocessing import parse_annotation_features_sequences
-from conv_frontend import YoloImgConvLSTM
+from conv_frontend import YoloConvLSTM
 import json
 import cv2
 

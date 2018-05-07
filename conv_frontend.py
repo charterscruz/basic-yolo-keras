@@ -552,11 +552,11 @@ class YoloConvLSTM(object):
         #                                          jitter=False)
 
         train_generator = BatchGeneratorFeatureSequences(train_imgs,
-                                                 generator_config,
-                                                 jitter=False)
+                                                         generator_config,
+                                                         jitter=False)
         valid_generator = BatchGeneratorFeatureSequences(valid_imgs,
-                                                 generator_config,
-                                                 jitter=False)
+                                                         generator_config,
+                                                         jitter=False)
 
 
         self.warmup_batches = warmup_epochs * (train_times * len(train_generator) + valid_times * len(valid_generator))
@@ -602,8 +602,8 @@ class YoloConvLSTM(object):
                                  validation_data=valid_generator,
                                  validation_steps=len(valid_generator) * valid_times,
                                  callbacks=[early_stop, checkpoint, tensorboard],
-                                 workers=3,
-                                 max_queue_size=8)
+                                 workers=1, #3
+                                 max_queue_size=1)   #8
 
         ############################################
         # Compute mAP on the validation set

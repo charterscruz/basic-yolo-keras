@@ -603,7 +603,7 @@ class YoloConvLSTM(object):
                                  validation_steps=len(valid_generator) * valid_times,
                                  callbacks=[early_stop, checkpoint, tensorboard],
                                  workers=1, #3
-                                 max_queue_size=1)   #8
+                                 max_queue_size=0)   #8
 
         ############################################
         # Compute mAP on the validation set

@@ -45,7 +45,7 @@ def _main_(args):
         config = json.load(config_buffer)
 
     ###############################
-    #   Make the model 
+    #   Make the m7odel
     ###############################
 
     yolo = YOLO(backend             = config['model']['backend'],
@@ -65,7 +65,7 @@ def _main_(args):
     ###############################
 
     if image_path[-4:] == '.mp4' or image_path[-4:] == '.avi':
-        video_out = image_path[:-4] + '_detected' + image_path[-4:]
+        video_out = image_path[:-4] + '_detected_ty' + image_path[-4:]
         video_reader = cv2.VideoCapture(image_path)
 
         nb_frames = int(video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -80,7 +80,7 @@ def _main_(args):
                                (frame_w, frame_h))
         # OPEN RESULTS  file
         results_file = open(
-            image_path[:-4] + '.results.txt', 'w+')
+            image_path[:-4] + '.results_ty.txt', 'w+')
 
 
         for i in tqdm(range(nb_frames)):

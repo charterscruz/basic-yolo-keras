@@ -739,7 +739,7 @@ class YoloConvLSTM(object):
 
         netout = self.model.predict([image, dummy_array])[0]
         # print(netout)
-        boxes = decode_netout(netout, self.anchors, self.nb_class)
+        boxes = decode_netout(netout, self.anchors, self.nb_class, obj_threshold= 0.3)
 
         return boxes
 

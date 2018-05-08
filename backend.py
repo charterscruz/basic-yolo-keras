@@ -9,6 +9,7 @@ from keras.applications.mobilenet import MobileNet
 from keras.applications import InceptionV3
 from keras.applications.vgg16 import VGG16
 from keras.applications.resnet50 import ResNet50
+from keras.layers.convolutional_recurrent import ConvLSTM2D
 
 FULL_YOLO_BACKEND_PATH  = "full_yolo_backend.h5"   # should be hosted on a server
 TINY_YOLO_BACKEND_PATH  = "tiny_yolo_backend.h5"   # should be hosted on a server
@@ -345,38 +346,45 @@ class TinyYoloFeature(BaseFeatureExtractor):
 
 class TinyYoloFeatureTimeDist(BaseFeatureExtractor):
     """docstring for ClassName"""
-    def __init__(self, input_size):
-        input_image = Input(shape=(input_size, input_size, 3))
+    def __init__(self, input_size, input_time_horizon):
+        input_image = Input(shape=(input_time_horizon, input_size, input_size, 3))
 
         # Layer 1
-        x = Conv2D(16, (3,3), strides=(1,1), padding='same', name='conv_1', use_bias=False)(input_image)
+        x = TimeDistributed(Conv2D(16, (3,3), strides=(1,1), padding='same', name='conv_1', use_bias=False))(input_image)
         x = BatchNormalization(name='norm_1')(x)
-        x = LeakyReLU(alpha=0.1)(x)
-        x = MaxPooling2D(pool_size=(2, 2))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+        x = TimeDistributed(MaxPooling2D(pool_size=(2, 2)))(x)
 
         # Layer 2 - 5
         for i in range(0,4):
-            x = Conv2D(32*(2**i), (3,3), strides=(1,1), padding='same', name='conv_' + str(i+2), use_bias=False)(x)
+            x = TimeDistributed(Conv2D(32*(2**i), (3,3), strides=(1,1), padding='same', name='conv_' + str(i+2), use_bias=False))(x)
             x = BatchNormalization(name='norm_' + str(i+2))(x)
-            x = LeakyReLU(alpha=0.1)(x)
-            x = MaxPooling2D(pool_size=(2, 2))(x)
+            x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+            x = TimeDistributed(MaxPooling2D(pool_size=(2, 2)))(x)
 
         # Layer 6
-        x = Conv2D(512, (3,3), strides=(1,1), padding='same', name='conv_6', use_bias=False)(x)
+        x = TimeDistributed(Conv2D(512, (3,3), strides=(1,1), padding='same', name='conv_6', use_bias=False))(x)
         x = BatchNormalization(name='norm_6')(x)
-        x = LeakyReLU(alpha=0.1)(x)
-        x = MaxPooling2D(pool_size=(2, 2), strides=(1,1), padding='same')(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+        x = TimeDistributed(MaxPooling2D(pool_size=(2, 2), strides=(1,1), padding='same'))(x)
 
         # Layer 7 - 8
         for i in range(0,2):
-            x = Conv2D(1024, (3,3), strides=(1,1), padding='same', name='conv_' + str(i+7), use_bias=False)(x)
+            print(str(i+7))
+            x = TimeDistributed(Conv2D(1024, (3,3), strides=(1,1), padding='same', name='conv_' + str(i+7), use_bias=False))(x)
             x = BatchNormalization(name='norm_' + str(i+7))(x)
-            x = LeakyReLU(alpha=0.1)(x)
+            x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+
+        x = ConvLSTM2D(filters=1024, kernel_size=(3, 3),
+                       padding='same', return_sequences=False)(x)
 
         self.feature_extractor = Model(input_image, x)
-        self.feature_extractor.load_weights(TINY_YOLO_BACKEND_PATH)
-        pass
+        # self.feature_extractor.load_weights(TINY_YOLO_BACKEND_PATH)
+        # features = self.feature_extractor.extract(input_image)
 
+        # x = ConvLSTM2D(filters=1024, kernel_size=(3, 3),
+        #                padding='same', return_sequences=False)(features)
+        pass
 
 
     def normalize(self, image):

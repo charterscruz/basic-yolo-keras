@@ -79,9 +79,9 @@ def _main_(args):
     #   Start the training process
     ###############################
     yolo_conv_lstm.train(train_imgs         = train_imgs,
-               valid_imgs         = valid_imgs,
-               train_times        = config['train']['train_times'],
-               valid_times        = config['valid']['valid_times'],
+                         valid_imgs         = valid_imgs,
+                         train_times        = config['train']['train_times'],
+                         valid_times        = config['valid']['valid_times'],
                nb_epochs          = config['train']['nb_epochs'],
                learning_rate      = config['train']['learning_rate'],
                batch_size         = config['train']['batch_size'],

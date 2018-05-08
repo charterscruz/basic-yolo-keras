@@ -8,6 +8,7 @@ import cv2
 from utils import decode_netout, compute_overlap, compute_ap
 from keras.applications.mobilenet import MobileNet
 from keras.layers.merge import concatenate
+from keras.layers import ConvLSTM2D
 from keras.optimizers import SGD, Adam, RMSprop
 from preprocessing import BatchGenerator
 from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
@@ -52,8 +53,6 @@ class YOLO(object):
             self.feature_extractor = FullYoloFeature(self.input_size)
         elif backend == 'Tiny Yolo':
             self.feature_extractor = TinyYoloFeature(self.input_size)
-        elif backend == 'Time Dist Tiny Yolo':
-            self.feature_extractor = TinyYoloFeatureTimeDist(self.input_size)
         elif backend == 'VGG16':
             self.feature_extractor = VGG16Feature(self.input_size)
         elif backend == 'ResNet50':
@@ -515,7 +514,9 @@ class TinyYoloTimeDist(object):
         elif backend == 'Tiny Yolo':
             self.feature_extractor = TinyYoloFeature(self.input_size)
         elif backend == 'Time Dist Tiny Yolo':
-            self.feature_extractor = TinyYoloFeatureTimeDist(self.input_size)
+            self.feature_extractor = TinyYoloFeatureTimeDist(self.input_size, input_time_horizon)
+        # elif backend == 'Time Dist Tiny Yolo':
+        #     self.feature_extractor = TinyYoloFeatureTimeDist(self.input_size, )
         elif backend == 'VGG16':
             self.feature_extractor = VGG16Feature(self.input_size)
         elif backend == 'ResNet50':
@@ -524,9 +525,14 @@ class TinyYoloTimeDist(object):
             raise Exception(
                 'Architecture not supported! Only support Full Yolo, Tiny Yolo, MobileNet, SqueezeNet, VGG16, ResNet50, and Inception3 at the moment!')
 
-        print(self.feature_extractor.get_output_shape())
-        self.grid_h, self.grid_w = self.feature_extractor.get_output_shape()
+        # print(self.feature_extractor.get_output_shape())
+        # self.grid_h, self.grid_w = self.feature_extractor.output_shape
+        self.grid_h, self.grid_w = self.feature_extractor.feature_extractor.output_shape[2:4]
         features = self.feature_extractor.extract(input_image)
+
+        # features = ConvLSTM2D(filters=1024, )
+        # features = ConvLSTM2D(filters=1024, kernel_size=(3, 3),
+        #                padding='same', return_sequences=False)(features)
 
         # make the object detection layer
         output = Conv2D(self.nb_box * (4 + 1 + self.nb_class),

@@ -132,6 +132,77 @@ def parse_annotation_features_sequences(ann_dir, img_dir, time_horizon, labels=[
     return all_imgs, seen_labels
 
 
+def parse_annotation_img_sequences(ann_dir, img_dir, time_horizon, labels=[]):
+    all_imgs = []
+    seen_labels = {}
+
+    for ann in sorted(os.listdir(ann_dir)):
+        img = {'object': []}
+
+        print(ann_dir + ann)
+        tree = ET.parse(ann_dir + ann)
+
+        for elem in tree.iter():
+            if 'filename' in elem.tag:
+                # check if a sequence exists
+                exists = True
+                for img_idx in range(time_horizon):
+
+                    # print(img_dir + str(int(elem.text[:-4]) + img_idx ) + '.npy')
+                    # print os.path.isfile(img_dir +
+                    #                           str(int(elem.text[:-4]) + img_idx ) + '.npy')
+                    if os.path.isfile(img_dir + str(int(elem.text[:-4]) + img_idx ) + '.jpg'):
+                        pass
+                    else:
+                        exists = False
+
+                    if not exists:
+                        print('should quit cycle')
+                        img['filename'] = []
+                        break
+                    if img_idx == time_horizon - 1:
+                        print('exists sequence')
+                        img['filename'] = img_dir + elem.text[:-4] + '.npy'
+
+                # img['filename'] = img_dir + elem.text[:-4] + '.npy'
+            if 'width' in elem.tag:
+                img['width'] = int(elem.text)
+            if 'height' in elem.tag:
+                img['height'] = int(elem.text)
+            if 'object' in elem.tag or 'part' in elem.tag:
+                obj = {}
+
+                for attr in list(elem):
+                    if 'name' in attr.tag:
+                        obj['name'] = attr.text
+
+                        if obj['name'] in seen_labels:
+                            seen_labels[obj['name']] += 1
+                        else:
+                            seen_labels[obj['name']] = 1
+
+                        if len(labels) > 0 and obj['name'] not in labels:
+                            break
+                        else:
+                            img['object'] += [obj]
+
+                    if 'bndbox' in attr.tag:
+                        for dim in list(attr):
+                            if 'xmin' in dim.tag:
+                                obj['xmin'] = int(round(float(dim.text)))
+                            if 'ymin' in dim.tag:
+                                obj['ymin'] = int(round(float(dim.text)))
+                            if 'xmax' in dim.tag:
+                                obj['xmax'] = int(round(float(dim.text)))
+                            if 'ymax' in dim.tag:
+                                obj['ymax'] = int(round(float(dim.text)))
+
+        if len(img['object']) > 0 and len(img['filename']) > 0:
+            all_imgs += [img]
+
+    return all_imgs, seen_labels
+
+
 class BatchGeneratorFeatureSequences(Sequence):
     def __init__(self, images,
                  config,

@@ -8,7 +8,7 @@ from tqdm import tqdm
 from preprocessing import parse_annotation
 from utils import draw_boxes
 from frontend import YOLO
-from conv_frontend import YoloConvLSTM
+from conv_frontend import deployYoloConvLSTM
 import json
 import glob
 import os
@@ -63,7 +63,7 @@ def _main_(args):
     #             max_box_per_image   = config['model']['max_box_per_image'],
     #             anchors             = config['model']['anchors'])
 
-    yolo = YoloConvLSTM(backend=config['model']['backend'],
+    yolo = deployYoloConvLSTM(backend=config['model']['backend'],
                         input_size=config['model']['input_size'],
                         input_time_horizon=time_horizon,
                         labels=config['model']['labels'],
@@ -81,6 +81,7 @@ def _main_(args):
     ###############################
 
     if image_path[-4:] == '.mp4' or image_path[-4:] == '.avi':
+
         video_out = image_path[:-4] + '_detected' + image_path[-4:]
         video_reader = cv2.VideoCapture(image_path)
 
@@ -101,7 +102,10 @@ def _main_(args):
 
         for i in tqdm(range(nb_frames)):
             _, image = video_reader.read()
-            
+
+            if i > time_horizon:
+
+
             boxes = yolo.predict(image)
             image = draw_boxes(image, boxes, config['model']['labels'])
 

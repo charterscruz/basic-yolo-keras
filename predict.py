@@ -11,7 +11,7 @@ from frontend import YOLO
 import json
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 argparser = argparse.ArgumentParser(
     description='Train and validate YOLO_v2 model on any dataset')
@@ -36,16 +36,16 @@ def _main_(args):
     weights_path = args.weights
     image_path   = args.input
 
-    # width = 1024
-    # height = 768
-    width = 1920
-    height = 1080
+    width = 1024
+    height = 768
+    # width = 1920
+    # height = 1080
 
     with open(config_path) as config_buffer:    
         config = json.load(config_buffer)
 
     ###############################
-    #   Make the m7odel
+    #   Make the model
     ###############################
 
     yolo = YOLO(backend             = config['model']['backend'],

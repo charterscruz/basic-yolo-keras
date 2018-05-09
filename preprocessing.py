@@ -341,6 +341,7 @@ class BatchGeneratorFeatureSequences(Sequence):
             gt_instance = copy.deepcopy(train_instance)
 
             name_to_search = os.path.split(train_instance['filename'])[0][:-9] + '/annotations/' + gt_filename
+            print('name_to_search', name_to_search)
 
             gt_tree = ET.parse(name_to_search)
 
@@ -621,6 +622,7 @@ class BatchGeneratorImgSequences(Sequence):
         return np.array(annots)
 
     def __getitem__(self, idx):
+        print('inside get_item')
         l_bound = idx * self.config['BATCH_SIZE']
         r_bound = (idx + 1) * self.config['BATCH_SIZE']
 
@@ -629,11 +631,12 @@ class BatchGeneratorImgSequences(Sequence):
             l_bound = r_bound - self.config['BATCH_SIZE']
 
         instance_count = 0
+
         x_batch = np.zeros((r_bound - l_bound,
                             self.config['TIME_HORIZON'],
                             self.config['IMAGE_H'],
                             self.config['IMAGE_W'],
-                            1024))  # input images
+                            3))  # input images
         b_batch = np.zeros((r_bound - l_bound,
                             1, 1, 1,
                             self.config['TRUE_BOX_BUFFER'],
@@ -644,6 +647,7 @@ class BatchGeneratorImgSequences(Sequence):
                             self.config['BOX'],
                             4 + 1 + len(self.config['LABELS'])))  # desired network output
 
+
         for train_instance in self.images[l_bound:r_bound]:
 
             # get the index of the gt to load
@@ -652,7 +656,8 @@ class BatchGeneratorImgSequences(Sequence):
                               + '.xml'
             gt_instance = copy.deepcopy(train_instance)
 
-            name_to_search = os.path.split(train_instance['filename'])[0][:-9] + '/annotations/' + gt_filename
+            name_to_search = os.path.split(train_instance['filename'])[0][:-7] + '/annotations/' + gt_filename
+            print(name_to_search)
 
             gt_tree = ET.parse(name_to_search)
 
@@ -694,6 +699,7 @@ class BatchGeneratorImgSequences(Sequence):
             img, all_objs = self.aug_sequences(train_instance, gt_instance,
                                                jitter=self.jitter,
                                                time_horizon= self.config['TIME_HORIZON'])
+            print('after aug_sequences')
 
             # construct output from object's x, y, w, h
             true_box_index = 0

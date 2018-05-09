@@ -531,7 +531,7 @@ class TinyYoloTimeDist(object):
         features = self.feature_extractor.extract(input_image)
 
         # features = ConvLSTM2D(filters=1024, )
-        features = ConvLSTM2D(filters=1024, kernel_size=(3, 3),
+        features = ConvLSTM2D(filters=10, kernel_size=(3, 3),  # TODO: I have to put the filter number back to 1024
                        padding='same', return_sequences=False)(features)
 
         # make the object detection layer
@@ -808,8 +808,8 @@ class TinyYoloTimeDist(object):
                                  validation_data=valid_generator,
                                  validation_steps=len(valid_generator) * valid_times,
                                  callbacks=[early_stop, checkpoint, tensorboard],
-                                 workers=3,
-                                 max_queue_size=8)
+                                 workers=1, # 3
+                                 max_queue_size=0)  #8
 
         ############################################
         # Compute mAP on the validation set

@@ -148,23 +148,17 @@ def parse_annotation_img_sequences(ann_dir, img_dir, time_horizon, labels=[]):
                 exists = True
                 for img_idx in range(time_horizon):
 
-                    # print(img_dir + str(int(elem.text[:-4]) + img_idx ) + '.npy')
-                    # print os.path.isfile(img_dir +
-                    #                           str(int(elem.text[:-4]) + img_idx ) + '.npy')
                     if os.path.isfile(img_dir + str(int(elem.text[:-4]) + img_idx ) + '.jpg'):
                         pass
                     else:
                         exists = False
 
                     if not exists:
-                        # print('should quit cycle')
                         img['filename'] = []
                         break
                     if img_idx == time_horizon - 1:
-                        # print('exists sequence')
                         img['filename'] = img_dir + elem.text[:-4] + '.jpg'
 
-                # img['filename'] = img_dir + elem.text[:-4] + '.npy'
             if 'width' in elem.tag:
                 img['width'] = int(elem.text)
             if 'height' in elem.tag:
@@ -665,7 +659,6 @@ class BatchGeneratorImgSequences(Sequence):
 
             for elem in gt_tree.iter():
                 if 'filename' in elem.tag:
-                    # gt_instance['filename'] = os.path.split(train_instance['filename'])[0] + elem.text[:-4] + '.npy'
                     gt_instance['filename'] = os.path.split(train_instance['filename'])[0] + elem.text[:-4] + '.jpg'
                 if 'width' in elem.tag:
                     gt_instance['width'] = int(elem.text)

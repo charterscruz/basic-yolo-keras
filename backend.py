@@ -374,17 +374,8 @@ class TinyYoloFeatureTimeDist(BaseFeatureExtractor):
             x = BatchNormalization(name='norm_' + str(i+7))(x)
             x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
 
-        # x = ConvLSTM2D(filters=1024, kernel_size=(3, 3),
-        #                padding='same', return_sequences=False)(x)
-
         self.feature_extractor = Model(input_image, x)
         self.feature_extractor.load_weights(TINY_YOLO_BACKEND_PATH)
-        # features = self.feature_extractor.extract(input_image)
-
-        # x = ConvLSTM2D(filters=1024, kernel_size=(3, 3),
-        #                padding='same', return_sequences=False)(features)
-        # pass
-
 
     def normalize(self, image):
         return image / 255.

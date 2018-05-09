@@ -515,8 +515,6 @@ class TinyYoloTimeDist(object):
             self.feature_extractor = TinyYoloFeature(self.input_size)
         elif backend == 'Time Dist Tiny Yolo':
             self.feature_extractor = TinyYoloFeatureTimeDist(self.input_size, self.input_time_horizon)
-        # elif backend == 'Time Dist Tiny Yolo':
-        #     self.feature_extractor = TinyYoloFeatureTimeDist(self.input_size, )
         elif backend == 'VGG16':
             self.feature_extractor = VGG16Feature(self.input_size)
         elif backend == 'ResNet50':
@@ -525,13 +523,14 @@ class TinyYoloTimeDist(object):
             raise Exception(
                 'Architecture not supported! Only support Full Yolo, Tiny Yolo, MobileNet, SqueezeNet, VGG16, ResNet50, and Inception3 at the moment!')
 
-        # print(self.feature_extractor.get_output_shape())
-        # self.grid_h, self.grid_w = self.feature_extractor.get_output_shape()
         self.grid_h, self.grid_w = self.feature_extractor.feature_extractor.output_shape[2:4]
         features = self.feature_extractor.extract(input_image)
 
-        # features = ConvLSTM2D(filters=1024, )
-        features = ConvLSTM2D(filters=10, kernel_size=(3, 3),  # TODO: I have to put the filter number back to 1024
+        # this layer transforms a tensor of
+        # (time_horizon, map_size, map_size, channel_number)
+        # into
+        # (map_size, map_size, channel_number)
+        features = ConvLSTM2D(filters=10, kernel_size=(3, 3),  # TODO: original size here was 1024
                        padding='same', return_sequences=False)(features)
 
         # make the object detection layer

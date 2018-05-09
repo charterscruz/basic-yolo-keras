@@ -4,13 +4,11 @@ import argparse
 import os
 import numpy as np
 from preprocessing import parse_annotation_img_sequences
-# from conv_frontend import YoloImgConvLSTM, YoloConvLSTM
-from frontend import YOLO, TinyYoloTimeDist
+from frontend import  TinyYoloTimeDist
 import json
-import cv2
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 argparser = argparse.ArgumentParser(
     description='Train and validate YOLO_v2 model on any dataset')

@@ -383,7 +383,7 @@ class TinyYoloFeatureTimeDist(BaseFeatureExtractor):
 
         # x = ConvLSTM2D(filters=1024, kernel_size=(3, 3),
         #                padding='same', return_sequences=False)(features)
-        pass
+        # pass
 
 
     def normalize(self, image):

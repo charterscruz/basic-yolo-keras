@@ -162,7 +162,7 @@ def parse_annotation_img_sequences(ann_dir, img_dir, time_horizon, labels=[]):
                         break
                     if img_idx == time_horizon - 1:
                         # print('exists sequence')
-                        img['filename'] = img_dir + elem.text[:-4] + '.npy'
+                        img['filename'] = img_dir + elem.text[:-4] + '.jpg'
 
                 # img['filename'] = img_dir + elem.text[:-4] + '.npy'
             if 'width' in elem.tag:
@@ -622,7 +622,7 @@ class BatchGeneratorImgSequences(Sequence):
         return np.array(annots)
 
     def __getitem__(self, idx):
-        print('inside get_item')
+
         l_bound = idx * self.config['BATCH_SIZE']
         r_bound = (idx + 1) * self.config['BATCH_SIZE']
 
@@ -657,7 +657,6 @@ class BatchGeneratorImgSequences(Sequence):
             gt_instance = copy.deepcopy(train_instance)
 
             name_to_search = os.path.split(train_instance['filename'])[0][:-7] + '/annotations/' + gt_filename
-            print(name_to_search)
 
             gt_tree = ET.parse(name_to_search)
 
@@ -699,14 +698,12 @@ class BatchGeneratorImgSequences(Sequence):
             img, all_objs = self.aug_sequences(train_instance, gt_instance,
                                                jitter=self.jitter,
                                                time_horizon= self.config['TIME_HORIZON'])
-            print('after aug_sequences')
 
             # construct output from object's x, y, w, h
             true_box_index = 0
 
             for obj in all_objs:
-                # if obj['xmax'] > obj['xmin'] and obj['ymax'] > obj['ymin'] and obj['name'] in self.config['LABELS']:  # original condiction had to be reformulated because map size in convlstm is very small
-                if obj['xmax'] >= obj['xmin'] and obj['ymax'] >= obj['ymin'] and obj['name'] in self.config['LABELS']:
+                if obj['xmax'] > obj['xmin'] and obj['ymax'] > obj['ymin'] and obj['name'] in self.config['LABELS']:  # original condiction had to be reformulated because map size in convlstm is very small
                     center_x = .5 * (obj['xmin'] + obj['xmax'])
                     center_x = center_x / (float(self.config['IMAGE_W']) / self.config['GRID_W'])
                     center_y = .5 * (obj['ymin'] + obj['ymax'])
@@ -740,8 +737,6 @@ class BatchGeneratorImgSequences(Sequence):
                                 max_iou = iou
 
                         # assign ground truth x, y, w, h, confidence and class probs to y_batch
-                        grid_x = np.clip(grid_x, 0, self.config['GRID_W'] - 1)
-                        grid_y = np.clip(grid_y, 0, self.config['GRID_H'] - 1)
                         y_batch[instance_count, grid_y, grid_x, best_anchor, 0:4] = box
                         y_batch[instance_count, grid_y, grid_x, best_anchor, 4] = 1.
                         y_batch[instance_count, grid_y, grid_x, best_anchor, 5 + obj_indx] = 1
@@ -757,9 +752,9 @@ class BatchGeneratorImgSequences(Sequence):
             # increase instance counter in current batch
             instance_count += 1
 
-
         return [x_batch, b_batch], y_batch
-    print('got to the end of the return batch')
+
+
     def on_epoch_end(self):
         if self.shuffle: np.random.shuffle(self.images)
 
@@ -797,17 +792,18 @@ class BatchGeneratorImgSequences(Sequence):
         return feature_image, all_objs
 
     def aug_sequences(self, train_instance, gt_instance, jitter, time_horizon):
-        feature_image_sequence = np.empty((0,13,13,1024))
+        feature_image_sequence = np.empty((0, self.config['IMAGE_H'], self.config['IMAGE_W'], 3))
 
         for i in range(time_horizon):
             image_name = train_instance['filename']
             name_to_load = os.path.split(image_name)[0] + '/' + str(int(os.path.split(image_name)[1][:-4]) + i) + '.jpg'
             # print('name_to_load ', name_to_load)
-            feature_image = np.load(name_to_load)
+            feature_image = cv2.imread(name_to_load)
 
             if feature_image is None: print('Cannot find ', image_name)
 
-            useless, h, w, c = feature_image.shape
+            h, w, c = feature_image.shape
+            feature_image = np.resize(feature_image, (1, h, w, c))
 
             feature_image_sequence = np.vstack((feature_image_sequence, feature_image))
 
@@ -830,9 +826,7 @@ class BatchGeneratorImgSequences(Sequence):
                 obj[attr] = int(obj[attr] * float(self.config['IMAGE_H']) / h)
                 obj[attr] = max(min(obj[attr], self.config['IMAGE_H']), 0)
 
-        # print('feature_image_sequence.shape:', feature_image_sequence.shape)
-        # print('all_objs', all_objs)
-        print('before reaching end of batch generator')
+
 
         return feature_image_sequence, all_objs
 

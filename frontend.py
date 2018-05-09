@@ -932,12 +932,12 @@ class TinyYoloTimeDist(object):
         return average_precisions
 
     def predict(self, image):
-        image_h, image_w, _ = image.shape
-        image = cv2.resize(image, (self.input_size, self.input_size))
-        image = self.feature_extractor.normalize(image)
+        time_horizon, image_h, image_w, _ = image.shape
+        # image = cv2.resize(image, (self.input_size, self.input_size))
+        # image = self.feature_extractor.normalize(image)
 
-        input_image = image[:, :, ::-1]
-        input_image = np.expand_dims(input_image, 0)
+        # input_image = image[:, :, ::-1]
+        input_image = np.expand_dims(image, 0)
         dummy_array = np.zeros((1, 1, 1, 1, self.max_box_per_image, 4))
 
         netout = self.model.predict([input_image, dummy_array])[0]

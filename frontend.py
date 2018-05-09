@@ -10,7 +10,7 @@ from keras.applications.mobilenet import MobileNet
 from keras.layers.merge import concatenate
 from keras.layers import ConvLSTM2D
 from keras.optimizers import SGD, Adam, RMSprop
-from preprocessing import BatchGenerator
+from preprocessing import BatchGenerator, BatchGeneratorImgSequences
 from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from backend import TinyYoloFeature, TinyYoloFeatureTimeDist, \
     FullYoloFeature, MobileNetFeature, SqueezeNetFeature, \
@@ -492,7 +492,7 @@ class TinyYoloTimeDist(object):
         self.nb_box = len(anchors) // 2
         self.class_wt = np.ones(self.nb_class, dtype='float32')
         self.anchors = anchors
-
+        self.input_time_horizon = input_time_horizon
         self.max_box_per_image = max_box_per_image
 
         ##########################
@@ -500,7 +500,7 @@ class TinyYoloTimeDist(object):
         ##########################
 
         # make the feature extractor layers
-        input_image = Input(shape=(self.input_size, self.input_size, 3))
+        input_image = Input(shape=(self.input_time_horizon, self.input_size, self.input_size, 3))
         self.true_boxes = Input(shape=(1, 1, 1, max_box_per_image, 4))
 
         if backend == 'Inception3':
@@ -514,7 +514,7 @@ class TinyYoloTimeDist(object):
         elif backend == 'Tiny Yolo':
             self.feature_extractor = TinyYoloFeature(self.input_size)
         elif backend == 'Time Dist Tiny Yolo':
-            self.feature_extractor = TinyYoloFeatureTimeDist(self.input_size, input_time_horizon)
+            self.feature_extractor = TinyYoloFeatureTimeDist(self.input_size, self.input_time_horizon)
         # elif backend == 'Time Dist Tiny Yolo':
         #     self.feature_extractor = TinyYoloFeatureTimeDist(self.input_size, )
         elif backend == 'VGG16':
@@ -526,13 +526,13 @@ class TinyYoloTimeDist(object):
                 'Architecture not supported! Only support Full Yolo, Tiny Yolo, MobileNet, SqueezeNet, VGG16, ResNet50, and Inception3 at the moment!')
 
         # print(self.feature_extractor.get_output_shape())
-        # self.grid_h, self.grid_w = self.feature_extractor.output_shape
+        # self.grid_h, self.grid_w = self.feature_extractor.get_output_shape()
         self.grid_h, self.grid_w = self.feature_extractor.feature_extractor.output_shape[2:4]
         features = self.feature_extractor.extract(input_image)
 
         # features = ConvLSTM2D(filters=1024, )
-        # features = ConvLSTM2D(filters=1024, kernel_size=(3, 3),
-        #                padding='same', return_sequences=False)(features)
+        features = ConvLSTM2D(filters=1024, kernel_size=(3, 3),
+                       padding='same', return_sequences=False)(features)
 
         # make the object detection layer
         output = Conv2D(self.nb_box * (4 + 1 + self.nb_class),
@@ -756,15 +756,16 @@ class TinyYoloTimeDist(object):
             'ANCHORS': self.anchors,
             'BATCH_SIZE': self.batch_size,
             'TRUE_BOX_BUFFER': self.max_box_per_image,
+            'TIME_HORIZON': self.input_time_horizon,
         }
 
-        train_generator = BatchGenerator(train_imgs,
-                                         generator_config,
-                                         norm=self.feature_extractor.normalize)
-        valid_generator = BatchGenerator(valid_imgs,
-                                         generator_config,
-                                         norm=self.feature_extractor.normalize,
-                                         jitter=False)
+        train_generator = BatchGeneratorImgSequences(train_imgs,
+                                                     generator_config,
+                                                     norm=self.feature_extractor.normalize)
+        valid_generator = BatchGeneratorImgSequences(valid_imgs,
+                                                     generator_config,
+                                                     norm=self.feature_extractor.normalize,
+                                                     jitter=False)
 
         self.warmup_batches = warmup_epochs * (train_times * len(train_generator) + valid_times * len(valid_generator))
 

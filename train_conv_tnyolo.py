@@ -10,7 +10,7 @@ import json
 import cv2
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 argparser = argparse.ArgumentParser(
     description='Train and validate YOLO_v2 model on any dataset')
@@ -72,7 +72,7 @@ def _main_(args):
                                   labels              = config['model']['labels'],
                                   max_box_per_image   = config['model']['max_box_per_image'],
                                   anchors             = config['model']['anchors'],
-                                  input_time_horizon  = 10) #config['model']['input_time_horizon'],)
+                                  input_time_horizon  = config['model']['input_time_horizon'],)
 
 
     ###############################
@@ -82,16 +82,16 @@ def _main_(args):
                          valid_imgs         = valid_imgs,
                          train_times        = config['train']['train_times'],
                          valid_times        = config['valid']['valid_times'],
-               nb_epochs          = config['train']['nb_epochs'],
-               learning_rate      = config['train']['learning_rate'],
-               batch_size         = config['train']['batch_size'],
-               warmup_epochs      = config['train']['warmup_epochs'],
-               object_scale       = config['train']['object_scale'],
-               no_object_scale    = config['train']['no_object_scale'],
-               coord_scale        = config['train']['coord_scale'],
-               class_scale        = config['train']['class_scale'],
-               saved_weights_name = config['train']['saved_weights_name'],
-               debug              = config['train']['debug'])
+                         nb_epochs          = config['train']['nb_epochs'],
+                         learning_rate      = config['train']['learning_rate'],
+                         batch_size         = config['train']['batch_size'],
+                         warmup_epochs      = config['train']['warmup_epochs'],
+                         object_scale       = config['train']['object_scale'],
+                         no_object_scale    = config['train']['no_object_scale'],
+                         coord_scale        = config['train']['coord_scale'],
+                         class_scale        = config['train']['class_scale'],
+                         saved_weights_name = config['train']['saved_weights_name'],
+                         debug              = config['train']['debug'])
 
 
 if __name__ == '__main__':

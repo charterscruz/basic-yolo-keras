@@ -798,6 +798,30 @@ class BatchGeneratorImgSequences(Sequence):
             h, w, c = feature_image.shape
             feature_image = np.resize(feature_image, (1, h, w, c))
 
+            # Todo : added these transformations to augment dataset but still need to check if works
+            if jitter:
+                ### scale the image
+                scale = np.random.uniform() / 10. + 1.
+                image = cv2.resize(image, (0, 0), fx=scale, fy=scale)
+
+                ### translate the image
+                max_offx = (scale - 1.) * w
+                max_offy = (scale - 1.) * h
+                offx = int(np.random.uniform() * max_offx)
+                offy = int(np.random.uniform() * max_offy)
+
+                image = image[offy: (offy + h), offx: (offx + w)]
+
+                ### flip the image
+                # flip = np.random.binomial(1, .5)
+                # if flip > 0.5: image = cv2.flip(image, 1)
+
+                feature_image = self.aug_pipe.augment_image(feature_image)
+
+            # resize the image to standard size
+            feature_image = cv2.resize(feature_image, (self.config['IMAGE_H'], self.config['IMAGE_W']))
+            # image = feature_image[:, :, ::-1]
+
             feature_image_sequence = np.vstack((feature_image_sequence, feature_image))
 
         all_objs = copy.deepcopy(gt_instance['object'])
@@ -1056,7 +1080,7 @@ class BatchGenerator(Sequence):
 
             image = self.aug_pipe.augment_image(image)
 
-            # resize the image to standard size
+        # resize the image to standard size
         image = cv2.resize(image, (self.config['IMAGE_H'], self.config['IMAGE_W']))
         image = image[:, :, ::-1]
 

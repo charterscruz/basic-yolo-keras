@@ -11,7 +11,7 @@ from frontend import  TinyYoloTimeDist
 import json
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 argparser = argparse.ArgumentParser(
     description='Train and validate YOLO_v2 model on any dataset')
@@ -36,10 +36,10 @@ def _main_(args):
     weights_path = args.weights
     image_path   = args.input
 
-    width = 1024
-    height = 768
-    # width = 1920
-    # height = 1080
+    # width = 1024
+    # height = 768
+    width = 1920
+    height = 1080
 
     with open(config_path) as config_buffer:    
         config = json.load(config_buffer)
@@ -65,10 +65,6 @@ def _main_(args):
     #   Load trained weights
     ###############################
 
-    # from keras.models import load_model
-    # mod = load_model(weights_path)
-
-
     yolo.load_weights(weights_path)
 
     ###############################
@@ -76,10 +72,9 @@ def _main_(args):
     ###############################
 
     if image_path[-4:] == '.mp4' or image_path[-4:] == '.avi':
-        video_out = image_path[:-4] + '_detected_ty' + image_path[-4:]
+        video_out = image_path[:-4] + '_detected_ty_convlstm' + image_path[-4:]
         video_reader = cv2.VideoCapture(image_path)
 
-        # todo switch the comments in the next two lines
         # nb_frames = int(video_reader.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
         nb_frames = int(video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
 
@@ -88,13 +83,12 @@ def _main_(args):
         frame_h = height
         frame_w = width
 
-        # todo uncomment the following lines
         video_writer = cv2.VideoWriter(video_out,
                                        cv2.VideoWriter_fourcc(*'MPEG'),
                                        50.0,
                                        (frame_w, frame_h))
         # OPEN RESULTS  file
-        results_file = open(image_path[:-4] + '.results_ty.txt', 'w+')
+        results_file = open(image_path[:-4] + '.results_ty_convlstm.txt', 'w+')
 
         image_seq = np.zeros((config['model']['input_time_horizon'], config['model']['input_size'],
                               config['model']['input_size'], 3))

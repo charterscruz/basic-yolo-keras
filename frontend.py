@@ -530,7 +530,7 @@ class TinyYoloTimeDist(object):
         # (time_horizon, map_size, map_size, channel_number)
         # into
         # (map_size, map_size, channel_number)
-        features = ConvLSTM2D(filters=10, kernel_size=(3, 3),  # TODO: original size here was 1024
+        features = ConvLSTM2D(filters=4, kernel_size=(3, 3),  # TODO: original size here was 1024
                        padding='same', return_sequences=False)(features)
 
         # make the object detection layer

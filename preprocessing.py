@@ -796,36 +796,37 @@ class BatchGeneratorImgSequences(Sequence):
             if feature_image is None: print('Cannot find ', image_name)
 
             h, w, c = feature_image.shape
-            feature_image = np.resize(feature_image, (1, h, w, c))
+            # feature_image = np.resize(feature_image, (1, h, w, c))
 
-            # Todo : added these transformations to augment dataset but still need to check if works
-            if jitter:
-                ### scale the image
-                scale = np.random.uniform() / 10. + 1.
-                image = cv2.resize(image, (0, 0), fx=scale, fy=scale)
-
-                ### translate the image
-                max_offx = (scale - 1.) * w
-                max_offy = (scale - 1.) * h
-                offx = int(np.random.uniform() * max_offx)
-                offy = int(np.random.uniform() * max_offy)
-
-                image = image[offy: (offy + h), offx: (offx + w)]
-
-                ### flip the image
-                # flip = np.random.binomial(1, .5)
-                # if flip > 0.5: image = cv2.flip(image, 1)
-
-                feature_image = self.aug_pipe.augment_image(feature_image)
+            # # Todo : added these transformations to augment dataset but still need to check if works
+            # if jitter:
+            #     ### scale the image
+            #     scale = np.random.uniform() / 10. + 1.
+            #     feature_image = cv2.resize(feature_image, (0, 0), fx=scale, fy=scale)
+            #
+            #     ### translate the image
+            #     max_offx = (scale - 1.) * w
+            #     max_offy = (scale - 1.) * h
+            #     offx = int(np.random.uniform() * max_offx)
+            #     offy = int(np.random.uniform() * max_offy)
+            #
+            #     feature_image = feature_image[offy: (offy + h), offx: (offx + w)]
+            #
+            #     ### flip the image
+            #     # flip = np.random.binomial(1, .5)
+            #     # if flip > 0.5: image = cv2.flip(image, 1)
+            #
+            #     feature_image = self.aug_pipe.augment_image(feature_image)
 
             # resize the image to standard size
             feature_image = cv2.resize(feature_image, (self.config['IMAGE_H'], self.config['IMAGE_W']))
+            feature_image = np.reshape(feature_image, (1, h, w, c))
             # image = feature_image[:, :, ::-1]
 
             feature_image_sequence = np.vstack((feature_image_sequence, feature_image))
 
         all_objs = copy.deepcopy(gt_instance['object'])
-
+        # todo here
         np.resize(feature_image_sequence, (time_horizon, self.config['IMAGE_H'], self.config['IMAGE_W'], c))
         feature_image_sequence = feature_image_sequence[:, :, :, ::-1]
 
@@ -842,8 +843,6 @@ class BatchGeneratorImgSequences(Sequence):
 
                 obj[attr] = int(obj[attr] * float(self.config['IMAGE_H']) / h)
                 obj[attr] = max(min(obj[attr], self.config['IMAGE_H']), 0)
-
-
 
         return feature_image_sequence, all_objs
 

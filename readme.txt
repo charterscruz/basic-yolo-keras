@@ -40,4 +40,5 @@ tensorboard --logdir=/home/gcx/logs/full_yolo --port 6006
 
 
 
+python train_conv_tnyolo.py -c configs/config_boat_tiny_yolo_seq.json
 

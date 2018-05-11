@@ -530,9 +530,9 @@ class TinyYoloTimeDist(object):
         # (time_horizon, map_size, map_size, channel_number)
         # into
         # (map_size, map_size, channel_number)
-        features = ConvLSTM2D(filters=1024, kernel_size=(3, 3),  # TODO: original size here was 1024
+        features = ConvLSTM2D(filters=1024, kernel_size=(3, 3),
                        padding='same', return_sequences=False)(features)
-
+        features = BatchNormalization(name='norm_convlstm')(features)
         # make the object detection layer
         output = Conv2D(self.nb_box * (4 + 1 + self.nb_class),
                         (1, 1), strides=(1, 1),
@@ -807,8 +807,8 @@ class TinyYoloTimeDist(object):
                                  validation_data=valid_generator,
                                  validation_steps=len(valid_generator) * valid_times,
                                  callbacks=[early_stop, checkpoint, tensorboard],
-                                 workers=1, # 3
-                                 max_queue_size=0)  #8
+                                 workers=3, # 3
+                                 max_queue_size=8)  #8
 
         ############################################
         # Compute mAP on the validation set

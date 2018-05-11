@@ -1,4 +1,4 @@
-from keras.models import Model
+from keras.models import Model, load_model
 import tensorflow as tf
 from keras.layers import Reshape, Activation, Conv2D, \
     Input, MaxPooling2D, BatchNormalization, Flatten, \
@@ -9,7 +9,8 @@ from keras.applications.mobilenet import MobileNet
 from keras.applications import InceptionV3
 from keras.applications.vgg16 import VGG16
 from keras.applications.resnet50 import ResNet50
-from keras.layers.convolutional_recurrent import ConvLSTM2D
+# from keras.layers.convolutional_recurrent import ConvLSTM2D
+
 
 FULL_YOLO_BACKEND_PATH  = "full_yolo_backend.h5"   # should be hosted on a server
 TINY_YOLO_BACKEND_PATH  = "tiny_yolo_backend.h5"   # should be hosted on a server
@@ -347,6 +348,27 @@ class TinyYoloFeature(BaseFeatureExtractor):
 class TinyYoloFeatureTimeDist(BaseFeatureExtractor):
     """docstring for ClassName"""
     def __init__(self, input_size, input_time_horizon):
+
+        old_input_image = Input(shape=(input_size, input_size, 3))
+        true_boxes = Input(shape=(1, 1, 1, 10, 4))
+
+        #
+        old_extractor = TinyYoloFeature(input_size)
+
+        old_features = old_extractor.extract(old_input_image)
+        old_output = Conv2D(5 * (4  + 1 + 1),
+                        (1,1), strides=(1,1),
+                        padding='same',
+                        name='DetectionLayer',
+                        kernel_initializer='lecun_normal')(old_features)
+        old_output = Reshape((13, 13,
+                              5, 4 + 1 + 1))(old_output)
+        Lambda(lambda args: args[0])([old_output, true_boxes])
+        old_model = Model([old_input_image, true_boxes], old_output)
+        old_model.load_weights('tiny_yolo_retrain_boat.h5')
+        #
+
+
         input_image = Input(shape=(input_time_horizon, input_size, input_size, 3))
 
         # Layer 1
@@ -375,7 +397,30 @@ class TinyYoloFeatureTimeDist(BaseFeatureExtractor):
             x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
 
         self.feature_extractor = Model(input_image, x)
-        self.feature_extractor.load_weights(TINY_YOLO_BACKEND_PATH)
+        # self.feature_extractor.load_weights(TINY_YOLO_BACKEND_PATH)
+        self.feature_extractor.layers[1].set_weights(old_model.layers[1].layers[1].get_weights())
+        self.feature_extractor.layers[1].trainable = False
+
+        self.feature_extractor.layers[5].set_weights(old_model.layers[1].layers[5].get_weights())
+        self.feature_extractor.layers[5].trainable = False
+
+        self.feature_extractor.layers[9].set_weights(old_model.layers[1].layers[9].get_weights())
+        self.feature_extractor.layers[9].trainable = False
+
+        self.feature_extractor.layers[13].set_weights(old_model.layers[1].layers[13].get_weights())
+        self.feature_extractor.layers[13].trainable = False
+        self.feature_extractor.layers[17].set_weights(old_model.layers[1].layers[17].get_weights())
+        self.feature_extractor.layers[17].trainable = False
+        self.feature_extractor.layers[21].set_weights(old_model.layers[1].layers[21].get_weights())
+        self.feature_extractor.layers[21].trainable = False
+        self.feature_extractor.layers[25].set_weights(old_model.layers[1].layers[25].get_weights())
+        self.feature_extractor.layers[25].trainable = False
+        self.feature_extractor.layers[28].set_weights(old_model.layers[1].layers[28].get_weights())
+        self.feature_extractor.layers[28].trainable = False
+
+        del old_model, old_output, old_features, old_input_image, old_extractor, true_boxes
+        pass
+
 
     def normalize(self, image):
         return image / 255.

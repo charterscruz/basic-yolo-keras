@@ -15,7 +15,7 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from backend import TinyYoloFeature, TinyYoloFeatureTimeDist, \
     FullYoloFeature, MobileNetFeature, SqueezeNetFeature, \
     Inception3Feature, VGG16Feature, ResNet50Feature
-
+import time
 
 # class provided in the original repository
 class YOLO(object):
@@ -775,13 +775,21 @@ class TinyYoloTimeDist(object):
         optimizer = Adam(lr=learning_rate, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
         self.model.compile(loss=self.custom_loss, optimizer=optimizer)
 
+        ###########################################
+        # Set the names for the files to be saved
+        ###########################################
+        current_date = time.strftime('%Y%m%d')
+        current_time = time.strftime('%H%M')
+        model_fn = 'models/tn_yolo_cvlstm' + current_date + '_' + current_time + '.ep{epoch:02d}-ls{val_loss:.5f}' + '_' + '.h5'
+
+
         ############################################
         # Make a few callbacks
         ############################################
 
         early_stop = EarlyStopping(monitor='val_loss',
                                    min_delta=0.00001,
-                                   patience=5,
+                                   patience=10,
                                    mode='min',
                                    verbose=1)
         checkpoint = ModelCheckpoint(saved_weights_name,

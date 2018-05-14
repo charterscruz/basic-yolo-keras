@@ -32,6 +32,8 @@ argparser.add_argument(
     help='path to an image or an video (mp4 format)')
 
 def _main_(args):
+    cv_major = int((cv2.__version__)[0])
+
     config_path  = args.conf
     weights_path = args.weights
     image_path   = args.input
@@ -75,20 +77,36 @@ def _main_(args):
         video_out = image_path[:-4] + '_detected_ty_convlstm' + image_path[-4:]
         video_reader = cv2.VideoCapture(image_path)
 
-        # nb_frames = int(video_reader.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
-        nb_frames = int(video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
-
-        #frame_h = int(video_reader.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        #frame_w = int(video_reader.get(cv2.CAP_PROP_FRAME_WIDTH))
         frame_h = height
         frame_w = width
 
-        video_writer = cv2.VideoWriter(video_out,
-                                       cv2.VideoWriter_fourcc(*'MPEG'),
-                                       50.0,
-                                       (frame_w, frame_h))
-        # OPEN RESULTS  file
+        if cv_major == 2:
+            nb_frames = int(video_reader.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
+            video_writer = cv2.VideoWriter(video_out,
+                                           cv2.cv.CV_FOURCC(*'MPEG'),
+                                           50.0,
+                                           (frame_w, frame_h))
+            cv2.namedWindow('img', cv2.cv.CV_WINDOW_AUTOSIZE)
+        elif cv_major ==3:
+            nb_frames = int(video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
+            video_writer = cv2.VideoWriter(video_out,
+                                           cv2.VideoWriter_fourcc(*'MPEG'),
+                                           50.0,
+                                           (frame_w, frame_h))
+            cv2.namedWindow('img', cv2.WINDOW_AUTOSIZE)
+
+        #frame_h = int(video_reader.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        #frame_w = int(video_reader.get(cv2.CAP_PROP_FRAME_WIDTH))
+
+        # video_writer = cv2.VideoWriter(video_out,
+        #                                cv2.cv.CV_FOURCC(*'MPEG'),
+        #                                #cv2.VideoWriter_fourcc(*'MPEG'),
+        #                                50.0,
+        #                                (frame_w, frame_h))
+
+
         results_file = open(image_path[:-4] + '.results_ty_convlstm.txt', 'w+')
+        # OPEN RESULTS  file
 
         image_seq = np.zeros((config['model']['input_time_horizon'], config['model']['input_size'],
                               config['model']['input_size'], 3))
@@ -103,7 +121,9 @@ def _main_(args):
             if i >= config['model']['input_time_horizon']:
 
                 boxes = yolo.predict(image_seq)
+                # print(boxes)
                 image = draw_boxes(image, boxes, config['model']['labels'])
+                cv2.imshow('img', image)
 
                 for bb in range(0,len(boxes)):
                     left_coor = boxes[bb].xmin * width
@@ -113,10 +133,12 @@ def _main_(args):
                     scoring = boxes[bb].score
 
                     results_file.write(str(i) + ' ' + str(left_coor) + ' ' + str(top_coor) + ' ' +
-                                    str(right_coor - left_coor) + ' ' + str(bottom_coor - top_coor) + ' 1 ' +
-                                    str(scoring) + '\n')
+                                       str(right_coor - left_coor) + ' ' + str(bottom_coor - top_coor) + ' 1 ' +
+                                       str(scoring) + '\n')
+
 
             video_writer.write(np.uint8(image))
+            cv2.waitKey(1)
             image_seq = np.roll(image_seq, (-1, 0, 0, 0))
 
         results_file.close()

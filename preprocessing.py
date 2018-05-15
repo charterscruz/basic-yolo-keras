@@ -740,7 +740,7 @@ class BatchGeneratorImgSequences(Sequence):
                         true_box_index += 1
                         true_box_index = true_box_index % self.config['TRUE_BOX_BUFFER']
 
-                x_batch[instance_count] = img
+                x_batch[instance_count] = img / 255.
 
             # increase instance counter in current batch
             instance_count += 1
@@ -929,6 +929,7 @@ class BatchGenerator(Sequence):
             ],
             random_order=True
         )
+
 
         if shuffle: np.random.shuffle(self.images)
 

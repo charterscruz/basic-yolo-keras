@@ -11,7 +11,7 @@ from frontend import  TinyYoloTimeDist
 import json
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 argparser = argparse.ArgumentParser(
     description='Train and validate YOLO_v2 model on any dataset')
@@ -87,6 +87,7 @@ def _main_(args):
                                            50.0,
                                            (frame_w, frame_h))
             cv2.namedWindow('img', cv2.cv.CV_WINDOW_AUTOSIZE)
+
         elif cv_major ==3:
             nb_frames = int(video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
             video_writer = cv2.VideoWriter(video_out,
@@ -114,7 +115,7 @@ def _main_(args):
         for i in tqdm(range(nb_frames)):
             _, image = video_reader.read()
 
-            image_seq[-1, :, :, :] = cv2.resize(image / 255.,
+            image_seq[-1, :, :, :] = cv2.resize(image ,
                                                 (config['model']['input_size'],
                                                  config['model']['input_size']))
 
@@ -146,7 +147,13 @@ def _main_(args):
         video_writer.release()
 
     else:
-        image = cv2.imread(image_path)
+        image_seq = np.zeros((config['model']['input_time_horizon'], config['model']['input_size'],
+                              config['model']['input_size'], 3))
+        directory_name, file_name = os.path.split(image_path)
+        for i in range(config['model']['input_time_horizon']):
+            image = cv2.imread(directory_name + str(int(file_name[:-4])+i ) + '.jpg')
+            image_seq[-1, :, :, :] = cv2.resize()
+
         boxes = yolo.predict(image)
         image = draw_boxes(image, boxes, config['model']['labels'])
 

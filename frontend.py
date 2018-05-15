@@ -533,18 +533,18 @@ class TinyYoloTimeDist(object):
         features = TimeDistributed(Conv2D(self.nb_box * (4 + 1 + self.nb_class),
                         (1, 1), strides=(1, 1),
                         padding='same', name='DetectionLayer',
-                        kernel_initializer='lecun_normal')(features))(features)
+                        kernel_initializer='lecun_normal'))(features)
         features = BatchNormalization(name='norm_convlstm')(features)
-        features = ConvLSTM2D(filters=30, kernel_size=(3, 3),
+        features = ConvLSTM2D(filters=1024, kernel_size=(3, 3),
                        padding='same', return_sequences=False)(features)
-        # features = BatchNormalization(name='norm_convlstm')(features)
+        features = BatchNormalization(name='norm_convlstm')(features)
         # make the object detection layer
-        # output = Conv2D(self.nb_box * (4 + 1 + self.nb_class),
-        #                 (1, 1), strides=(1, 1),
-        #                 padding='same',
-        #                 name='DetectionLayer',
-        #                 kernel_initializer='lecun_normal')(features)
-        output = Reshape((self.grid_h, self.grid_w, self.nb_box, 4 + 1 + self.nb_class))(features)
+        output = Conv2D(self.nb_box * (4 + 1 + self.nb_class),
+                         (1, 1), strides=(1, 1),
+                         padding='same',
+                         name='DetectionLayer',
+                         kernel_initializer='lecun_normal')(features)
+        output = Reshape((self.grid_h, self.grid_w, self.nb_box, 4 + 1 + self.nb_class))(output)
         output = Lambda(lambda args: args[0])([output, self.true_boxes])
 
         self.model = Model([input_image, self.true_boxes], output)
@@ -777,7 +777,9 @@ class TinyYoloTimeDist(object):
         # Compile the model
         ############################################
 
-        optimizer = Adam(lr=learning_rate, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+        #optimizer = Adam(lr=learning_rate, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+        from keras.optimizers import Adadelta
+        optimizer = Adadelta()
         self.model.compile(loss=self.custom_loss, optimizer=optimizer)
 
         ###########################################

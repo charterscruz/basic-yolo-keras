@@ -41,6 +41,11 @@ def _main_(args):
     width = 1920
     height = 1080
 
+    cv2.namedWindow('img', 0)
+
+    major = int(cv2.__version__.split(".")[0])
+
+
     with open(config_path) as config_buffer:    
         config = json.load(config_buffer)
 
@@ -68,16 +73,27 @@ def _main_(args):
         video_out = image_path[:-4] + '_detected_ty' + image_path[-4:]
         video_reader = cv2.VideoCapture(image_path)
 
-        nb_frames = int(video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
+        if major == 3:
+            nb_frames = int(video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
+        else:
+            nb_frames = int(video_reader.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
         #frame_h = int(video_reader.get(cv2.CAP_PROP_FRAME_HEIGHT))
         #frame_w = int(video_reader.get(cv2.CAP_PROP_FRAME_WIDTH))
         frame_h = height
         frame_w = width
 
-        video_writer = cv2.VideoWriter(video_out,
+        if major == 3:
+            video_writer = cv2.VideoWriter(video_out,
                                cv2.VideoWriter_fourcc(*'MPEG'), 
                                50.0, 
                                (frame_w, frame_h))
+        else:
+            pass
+            # video_writer = cv2.VideoWriter(video_out,
+            #                                cv2.VideoWriter_fourcc(*'MPEG'),
+            #                                50.0,
+            #                                (frame_w, frame_h))
+
         # OPEN RESULTS  file
         results_file = open(
             image_path[:-4] + '.results_ty.txt', 'w+')
@@ -87,6 +103,7 @@ def _main_(args):
             _, image = video_reader.read()
             
             boxes = yolo.predict(image)
+            print boxes
             image = draw_boxes(image, boxes, config['model']['labels'])
 
             for bb in range(0,len(boxes)):
@@ -100,11 +117,13 @@ def _main_(args):
                                 str(right_coor - left_coor) + ' ' + str(bottom_coor - top_coor) + ' 1 ' +
                                 str(scoring) + '\n')
 
-            video_writer.write(np.uint8(image))
+            # video_writer.write(np.uint8(image))
+            cv2.imshow('img', image)
+            cv2.waitKey(1)
 
         results_file.close()
         video_reader.release()
-        video_writer.release()
+        # video_writer.release()
 
     else:
         image = cv2.imread(image_path)

@@ -356,7 +356,7 @@ class TinyYoloFeatureTimeDist(BaseFeatureExtractor):
         old_extractor = TinyYoloFeature(input_size)
 
         old_features = old_extractor.extract(old_input_image)
-        old_output = Conv2D(5 * (4  + 1 + 1),
+        old_output = Conv2D(5 * (4 + 1 + 1),
                         (1,1), strides=(1,1),
                         padding='same',
                         name='DetectionLayer',

@@ -1,7 +1,7 @@
 {
     "model" : {
         "backend":              "Full Yolo",
-        "input_size":           13,
+        "input_size":           416,
         "anchors":              [0.14, 0.17, 1.87446, 0.17,0.16, 0.23,0.29, 0.26,0.44, 0.42],
         "max_box_per_image":    10,        
         "labels":               ["boat"]

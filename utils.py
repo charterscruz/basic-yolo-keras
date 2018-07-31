@@ -76,7 +76,7 @@ def draw_boxes(image, boxes, labels):
         
     return image          
         
-def decode_netout(netout, anchors, nb_class, obj_threshold=0.1, nms_threshold=0.3):
+def decode_netout(netout, anchors, nb_class, obj_threshold=0.7, nms_threshold=0.3):
     grid_h, grid_w, nb_box = netout.shape[:3]
 
     boxes = []
@@ -86,7 +86,7 @@ def decode_netout(netout, anchors, nb_class, obj_threshold=0.1, nms_threshold=0.
     netout[..., 5:] = netout[..., 4][..., np.newaxis] * _softmax(netout[..., 5:])
     netout[..., 5:] *= netout[..., 5:] > obj_threshold
     # print('obj_threshold: ', obj_threshold)
-    
+
     for row in range(grid_h):
         for col in range(grid_w):
             for b in range(nb_box):

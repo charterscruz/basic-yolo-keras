@@ -792,7 +792,6 @@ class BatchGeneratorImgSequences(Sequence):
             name_to_load = os.path.split(image_name)[0] + '/' + str(int(os.path.split(image_name)[1][:-4]) + i) + '.jpg'
             # print('name_to_load ', name_to_load)
             feature_image = cv2.imread(name_to_load)
-            print('img max:', feature_image.max())
 
             if feature_image is None: print('Cannot find ', image_name)
 

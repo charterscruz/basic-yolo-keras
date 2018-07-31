@@ -24,7 +24,7 @@
         "coord_scale":          1.0,
         "class_scale":          1.0,
 
-	"saved_weights_name":   "tiny_yolo_conv_lstm_2.h5",
+	"saved_weights_name":   "tiny_yolo_conv_lstm_true_smaller.h5",
         "debug":                false
     },
 

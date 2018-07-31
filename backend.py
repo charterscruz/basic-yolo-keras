@@ -399,27 +399,26 @@ class TinyYoloFeatureTimeDist(BaseFeatureExtractor):
         self.feature_extractor = Model(input_image, x)
         # self.feature_extractor.load_weights(TINY_YOLO_BACKEND_PATH)
         self.feature_extractor.layers[1].set_weights(old_model.layers[1].layers[1].get_weights())
-        self.feature_extractor.layers[1].trainable = False
+        # self.feature_extractor.layers[1].trainable = False
 
         self.feature_extractor.layers[5].set_weights(old_model.layers[1].layers[5].get_weights())
-        self.feature_extractor.layers[5].trainable = False
+        # self.feature_extractor.layers[5].trainable = False
 
         self.feature_extractor.layers[9].set_weights(old_model.layers[1].layers[9].get_weights())
-        self.feature_extractor.layers[9].trainable = False
+        # self.feature_extractor.layers[9].trainable = False
 
         self.feature_extractor.layers[13].set_weights(old_model.layers[1].layers[13].get_weights())
-        self.feature_extractor.layers[13].trainable = False
+        # self.feature_extractor.layers[13].trainable = False
         self.feature_extractor.layers[17].set_weights(old_model.layers[1].layers[17].get_weights())
-        self.feature_extractor.layers[17].trainable = False
+        # self.feature_extractor.layers[17].trainable = False
         self.feature_extractor.layers[21].set_weights(old_model.layers[1].layers[21].get_weights())
-        self.feature_extractor.layers[21].trainable = False
+        # self.feature_extractor.layers[21].trainable = False
         self.feature_extractor.layers[25].set_weights(old_model.layers[1].layers[25].get_weights())
-        self.feature_extractor.layers[25].trainable = False
+        # self.feature_extractor.layers[25].trainable = False
         self.feature_extractor.layers[28].set_weights(old_model.layers[1].layers[28].get_weights())
-        self.feature_extractor.layers[28].trainable = False
+        # self.feature_extractor.layers[28].trainable = False
 
         del old_model, old_output, old_features, old_input_image, old_extractor, true_boxes
-        pass
 
 
     def normalize(self, image):

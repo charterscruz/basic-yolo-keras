@@ -11,7 +11,7 @@ from frontend import  TinyYoloTimeDist
 import json
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 argparser = argparse.ArgumentParser(
     description='Train and validate YOLO_v2 model on any dataset')
@@ -86,7 +86,7 @@ def _main_(args):
                                            cv2.cv.CV_FOURCC(*'MPEG'),
                                            50.0,
                                            (frame_w, frame_h))
-            cv2.namedWindow('img', cv2.cv.CV_WINDOW_AUTOSIZE)
+            cv2.namedWindow('img', cv2.cv.CV_WINDOW_NORMAL)
 
         elif cv_major ==3:
             nb_frames = int(video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -94,7 +94,7 @@ def _main_(args):
                                            cv2.VideoWriter_fourcc(*'MPEG'),
                                            50.0,
                                            (frame_w, frame_h))
-            cv2.namedWindow('img', cv2.WINDOW_AUTOSIZE)
+            cv2.namedWindow('img', cv2.WINDOW_NORMAL)
 
         #frame_h = int(video_reader.get(cv2.CAP_PROP_FRAME_HEIGHT))
         #frame_w = int(video_reader.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -105,9 +105,8 @@ def _main_(args):
         #                                50.0,
         #                                (frame_w, frame_h))
 
-
+        # Open results file
         results_file = open(image_path[:-4] + '.results_ty_convlstm.txt', 'w+')
-        # OPEN RESULTS  file
 
         image_seq = np.zeros((config['model']['input_time_horizon'], config['model']['input_size'],
                               config['model']['input_size'], 3))
@@ -115,14 +114,14 @@ def _main_(args):
         for i in tqdm(range(nb_frames)):
             _, image = video_reader.read()
 
-            image_seq[-1, :, :, :] = cv2.resize(image ,
+            image_seq[-1, :, :, :] = cv2.resize(image/255. ,
                                                 (config['model']['input_size'],
                                                  config['model']['input_size']))
 
             if i >= config['model']['input_time_horizon']:
 
                 boxes = yolo.predict(image_seq)
-                # print(boxes)
+
                 image = draw_boxes(image, boxes, config['model']['labels'])
                 cv2.imshow('img', image)
 
@@ -136,7 +135,6 @@ def _main_(args):
                     results_file.write(str(i) + ' ' + str(left_coor) + ' ' + str(top_coor) + ' ' +
                                        str(right_coor - left_coor) + ' ' + str(bottom_coor - top_coor) + ' 1 ' +
                                        str(scoring) + '\n')
-
 
             video_writer.write(np.uint8(image))
             cv2.waitKey(1)

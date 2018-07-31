@@ -40,7 +40,7 @@ class YOLO(object):
         ##########################
 
         # make the feature extractor layers
-        input_image     = Input(shape=(self.input_size, self.input_size, 3))
+        input_image = Input(shape=(self.input_size, self.input_size, 3))
         self.true_boxes = Input(shape=(1, 1, 1, max_box_per_image , 4))
 
         if backend == 'Inception3':
@@ -535,28 +535,34 @@ class TinyYoloTimeDist(object):
                         padding='same', name='DetectionLayer',
                         kernel_initializer='lecun_normal'))(features)
         features = BatchNormalization(name='norm_convlstm')(features)
-        features = ConvLSTM2D(filters=1024, kernel_size=(3, 3),
-                       padding='same', return_sequences=False)(features)
-        features = BatchNormalization(name='norm_convlstm')(features)
-        # make the object detection layer
-        output = Conv2D(self.nb_box * (4 + 1 + self.nb_class),
-                         (1, 1), strides=(1, 1),
-                         padding='same',
-                         name='DetectionLayer',
-                         kernel_initializer='lecun_normal')(features)
+        output = ConvLSTM2D(filters=self.nb_box * (4 + 1 + self.nb_class),
+                              kernel_size=(3, 3),
+                              padding='same',
+                              return_sequences=False)(features)
+        #################
+        # features = ConvLSTM2D(filters=1024, kernel_size=(3, 3),
+        #                padding='same', return_sequences=False)(features)
+        # features = BatchNormalization(name='norm_convlstm')(features)
+        # # make the object detection layer
+        # output = Conv2D(self.nb_box * (4 + 1 + self.nb_class),
+        #                  (1, 1), strides=(1, 1),
+        #                  padding='same',
+        #                  name='DetectionLayer',
+        #                  kernel_initializer='lecun_normal')(features)
         output = Reshape((self.grid_h, self.grid_w, self.nb_box, 4 + 1 + self.nb_class))(output)
         output = Lambda(lambda args: args[0])([output, self.true_boxes])
 
         self.model = Model([input_image, self.true_boxes], output)
 
         # initialize the weights of the detection layer
-        layer = self.model.layers[-4]
-        weights = layer.get_weights()
-
-        new_kernel = np.random.normal(size=weights[0].shape) / (self.grid_h * self.grid_w)
-        new_bias = np.random.normal(size=weights[1].shape) / (self.grid_h * self.grid_w)
-
-        layer.set_weights([new_kernel, new_bias])
+        # layer = self.model.layers[-4]
+        # layer = self.model.layers[-6]
+        # weights = layer.get_weights()
+        #
+        # new_kernel = np.random.normal(size=weights[0].shape) / (self.grid_h * self.grid_w)
+        # new_bias = np.random.normal(size=weights[1].shape) / (self.grid_h * self.grid_w)
+        #
+        # layer.set_weights([new_kernel, new_bias])
 
         # print a summary of the whole model
         self.model.summary()

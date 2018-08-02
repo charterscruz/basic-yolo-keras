@@ -1,0 +1,37 @@
+{
+    "model" : {
+        "backend":              "Full Yolo TimeDist",
+        "input_size":           416,
+        "anchors":              [0.14, 0.17, 1.87446, 0.17,0.16, 0.23,0.29, 0.26,0.44, 0.42],
+        "max_box_per_image":    10,        
+        "labels":               ["boat"],
+        "time_horizon":         2
+    },
+
+    "train": {
+        "train_image_folder":   "/media/gcx/9c3f749d-2350-407f-9652-43a1c3df129f/datasets/boat_voc_format/images/",
+        "train_annot_folder":   "/media/gcx/9c3f749d-2350-407f-9652-43a1c3df129f/datasets/boat_voc_format/annotations/",     
+          
+        "train_times":          8, 
+        "pretrained_weights":   "",
+        "batch_size":           16,
+        "learning_rate":        1e-4,
+        "nb_epochs":            30,
+        "warmup_epochs":        3,
+
+        "object_scale":         5.0 ,
+        "no_object_scale":      1.0,
+        "coord_scale":          1.0,
+        "class_scale":          1.0,
+
+	"saved_weights_name":   "full_yolo_retrain_boat_timedist.h5",
+        "debug":                false
+    },
+
+    "valid": {
+        "valid_image_folder":   "",
+        "valid_annot_folder":   "",
+
+        "valid_times":          1
+    }
+}

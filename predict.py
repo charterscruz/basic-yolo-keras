@@ -103,7 +103,7 @@ def _main_(args):
             _, image = video_reader.read()
             
             boxes = yolo.predict(image)
-            print boxes
+            # print boxes
             image = draw_boxes(image, boxes, config['model']['labels'])
 
             for bb in range(0,len(boxes)):

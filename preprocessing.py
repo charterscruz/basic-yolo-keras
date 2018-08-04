@@ -10,8 +10,8 @@ from utils import BoundBox, bbox_iou
 
 def parse_annotation(ann_dir, img_dir, labels=[]):
     all_imgs = []
+
     seen_labels = {}
-    
     for ann in sorted(os.listdir(ann_dir)):
         img = {'object':[]}
 
@@ -57,7 +57,7 @@ def parse_annotation(ann_dir, img_dir, labels=[]):
                         
     return all_imgs, seen_labels
 
-class BatchGenerator(Sequence):
+class BatchGeneratorTimeSeq(Sequence):
     def __init__(self, images, 
                        config, 
                        shuffle=True, 
@@ -167,9 +167,12 @@ class BatchGenerator(Sequence):
 
         instance_count = 0
 
-        x_batch = np.zeros((r_bound - l_bound, self.config['IMAGE_H'], self.config['IMAGE_W'], 3))                         # input images
+        x_batch = np.zeros((r_bound - l_bound, self.config['TIME_HORIZON'], self.config['IMAGE_H'], self.config['IMAGE_W'], 3))                         # input images
         b_batch = np.zeros((r_bound - l_bound, 1     , 1     , 1    ,  self.config['TRUE_BOX_BUFFER'], 4))   # list of self.config['TRUE_self.config['BOX']_BUFFER'] GT boxes
-        y_batch = np.zeros((r_bound - l_bound, self.config['GRID_H'],  self.config['GRID_W'], self.config['BOX'], 4+1+len(self.config['LABELS'])))                # desired network output
+        y_batch = np.zeros((r_bound - l_bound, self.config['GRID_H'],
+                            self.config['GRID_W'],
+                            self.config['BOX'],
+                            4+1+len(self.config['LABELS'])))                # desired network output
 
         for train_instance in self.images[l_bound:r_bound]:
             # augment input image and fix object's position and size
@@ -226,7 +229,7 @@ class BatchGenerator(Sequence):
                             
             # assign input image to x_batch
             if self.norm != None: 
-                x_batch[instance_count] = self.norm(img)
+                x_batch[instance_count] = np.expand_dims(self.norm(img), axis=0)
             else:
                 # plot image and bounding boxes for sanity check
                 for obj in all_objs:
@@ -237,7 +240,7 @@ class BatchGenerator(Sequence):
                                     0, 1.2e-3 * img.shape[0], 
                                     (0,255,0), 2)
                         
-                x_batch[instance_count] = img
+                x_batch[instance_count] = img # todo if I was to use this, it will need modifications
 
             # increase instance counter in current batch
             instance_count += 1  

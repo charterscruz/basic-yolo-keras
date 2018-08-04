@@ -5,12 +5,12 @@
         "anchors":              [0.14, 0.17, 1.87446, 0.17,0.16, 0.23,0.29, 0.26,0.44, 0.42],
         "max_box_per_image":    10,        
         "labels":               ["boat"],
-        "time_horizon":         2
+        "time_horizon":         1
     },
 
     "train": {
-        "train_image_folder":   "/media/gcx/9c3f749d-2350-407f-9652-43a1c3df129f/datasets/boat_voc_format/images/",
-        "train_annot_folder":   "/media/gcx/9c3f749d-2350-407f-9652-43a1c3df129f/datasets/boat_voc_format/annotations/",     
+        "train_image_folder":   "/home/gcx/datasets/boat_voc_format/images/",
+        "train_annot_folder":   "/home/gcx/datasets/boat_voc_format/annotations/",
           
         "train_times":          8, 
         "pretrained_weights":   "",

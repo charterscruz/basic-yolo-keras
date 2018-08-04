@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-
+import sys
 import argparse
 import os
 import numpy as np
@@ -68,7 +68,7 @@ def _main_(args):
     #             labels              = config['model']['labels'],
     #             max_box_per_image   = config['model']['max_box_per_image'],
     #             anchors             = config['model']['anchors'])
-    yolo = YOLO_timeDist(backend             = config['model']['backend'],
+    yolo = YOLO_timeDist(backend    = config['model']['backend'],
                 input_size          = config['model']['input_size'],
                 labels              = config['model']['labels'],
                 max_box_per_image   = config['model']['max_box_per_image'],
@@ -81,7 +81,11 @@ def _main_(args):
 
     if os.path.exists(config['train']['pretrained_weights']):
         print("Loading pre-trained weights in", config['train']['pretrained_weights'])
-        yolo.load_weights(config['train']['pretrained_weights'])
+        try:
+            yolo.load_weights(config['train']['pretrained_weights'])
+        except:
+            sys.error('could not load pretrained weights')
+            print('could not load pretrained weights')
 
     ###############################
     #   Start the training process 
@@ -99,6 +103,7 @@ def _main_(args):
                no_object_scale    = config['train']['no_object_scale'],
                coord_scale        = config['train']['coord_scale'],
                class_scale        = config['train']['class_scale'],
+               time_horizon       = config['model']['time_horizon'],
                saved_weights_name = config['train']['saved_weights_name'],
                debug              = config['train']['debug'])
 

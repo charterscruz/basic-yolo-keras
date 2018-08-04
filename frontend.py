@@ -10,7 +10,7 @@ from keras.applications.mobilenet import MobileNet
 from keras.layers.merge import concatenate
 from keras.layers import TimeDistributed
 from keras.optimizers import SGD, Adam, RMSprop
-from preprocessing import BatchGenerator
+from preprocessing import BatchGeneratorTimeSeq
 from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from backend import FullYoloFeature_TimeDist
 
@@ -39,9 +39,8 @@ class YOLO_timeDist(object):
 
         # make the feature extractor layers
         input_image     = Input(shape=(self.time_horiz, self.input_size, self.input_size, 3))
-        self.true_boxes = Input(shape=(1, 1, 1, max_box_per_image , 4))
+        self.true_boxes = Input(shape=(1, 1, 1, max_box_per_image, 4))  # does not have time dim
 
-        
         if backend == 'Full Yolo TimeDist':
             self.feature_extractor = FullYoloFeature_TimeDist(self.time_horiz, self.input_size)
         else:
@@ -50,20 +49,19 @@ class YOLO_timeDist(object):
         # print(self.feature_extractor.get_output_shape())
         self.grid_h, self.grid_w = self.feature_extractor.get_output_shape()        
         # features = self.feature_extractor.extract(input_image)
-        time_features = TimeDistributed(self.feature_extractor.extract())(input_image)
+        time_features = self.feature_extractor.extract(input_image)
 
         # make the object detection layer
         output = Conv2D(self.nb_box * (4 + 1 + self.nb_class), 
-                        (1,1), strides=(1,1), 
+                        (1,1), strides=(1, 1),
                         padding='same', 
                         name='DetectionLayer', 
-                        kernel_initializer='lecun_normal')(features)
+                        kernel_initializer='lecun_normal')(time_features)
         output = Reshape((self.grid_h, self.grid_w, self.nb_box, 4 + 1 + self.nb_class))(output)
         output = Lambda(lambda args: args[0])([output, self.true_boxes])
 
         self.model = Model([input_image, self.true_boxes], output)
 
-        
         # initialize the weights of the detection layer
         layer = self.model.layers[-4]
         weights = layer.get_weights()
@@ -246,9 +244,10 @@ class YOLO_timeDist(object):
                     object_scale,
                     no_object_scale,
                     coord_scale,
+                    time_horizon,
                     class_scale,
                     saved_weights_name='best_weights.h5',
-                    debug=False):     
+                    debug=False):
 
         self.batch_size = batch_size
 
@@ -264,9 +263,9 @@ class YOLO_timeDist(object):
         ############################################
 
         generator_config = {
-            'IMAGE_H'         : self.input_size, 
+            'IMAGE_H'         : self.input_size,
             'IMAGE_W'         : self.input_size,
-            'GRID_H'          : self.grid_h,  
+            'GRID_H'          : self.grid_h,
             'GRID_W'          : self.grid_w,
             'BOX'             : self.nb_box,
             'LABELS'          : self.labels,
@@ -274,17 +273,18 @@ class YOLO_timeDist(object):
             'ANCHORS'         : self.anchors,
             'BATCH_SIZE'      : self.batch_size,
             'TRUE_BOX_BUFFER' : self.max_box_per_image,
-        }    
+            'TIME_HORIZON'    : self.time_horiz,
+        }
 
-        train_generator = BatchGenerator(train_imgs, 
-                                     generator_config, 
+        train_generator = BatchGeneratorTimeSeq(train_imgs,
+                                     generator_config,
                                      norm=self.feature_extractor.normalize)
-        valid_generator = BatchGenerator(valid_imgs, 
-                                     generator_config, 
+        valid_generator = BatchGeneratorTimeSeq(valid_imgs,
+                                     generator_config,
                                      norm=self.feature_extractor.normalize,
-                                     jitter=False)   
-                                     
-        self.warmup_batches  = warmup_epochs * (train_times*len(train_generator) + valid_times*len(valid_generator))   
+                                     jitter=False)
+
+        self.warmup_batches  = warmup_epochs * (train_times*len(train_generator) + valid_times*len(valid_generator))
 
         ############################################
         # Compile the model
@@ -297,49 +297,49 @@ class YOLO_timeDist(object):
         # Make a few callbacks
         ############################################
 
-        early_stop = EarlyStopping(monitor='val_loss', 
-                           min_delta=0.00001, 
-                           patience=5, 
-                           mode='min', 
+        early_stop = EarlyStopping(monitor='val_loss',
+                           min_delta=0.00001,
+                           patience=5,
+                           mode='min',
                            verbose=1)
-        checkpoint = ModelCheckpoint(saved_weights_name, 
-                                     monitor='val_loss', 
-                                     verbose=1, 
-                                     save_best_only=True, 
-                                     mode='min', 
+        checkpoint = ModelCheckpoint(saved_weights_name,
+                                     monitor='val_loss',
+                                     verbose=1,
+                                     save_best_only=True,
+                                     mode='min',
                                      period=1)
-        tensorboard = TensorBoard(log_dir=os.path.expanduser('~/logs/'), 
-                                  histogram_freq=0, 
+        tensorboard = TensorBoard(log_dir=os.path.expanduser('~/logs/'),
+                                  histogram_freq=0,
                                   #write_batch_performance=True,
-                                  write_graph=True, 
+                                  write_graph=True,
                                   write_images=False)
 
         ############################################
         # Start the training process
-        ############################################        
+        ############################################
 
-        self.model.fit_generator(generator        = train_generator, 
-                                 steps_per_epoch  = len(train_generator) * train_times, 
-                                 epochs           = warmup_epochs + nb_epochs, 
+        self.model.fit_generator(generator        = train_generator,
+                                 steps_per_epoch  = len(train_generator) * train_times,
+                                 epochs           = warmup_epochs + nb_epochs,
                                  verbose          = 2 if debug else 1,
                                  validation_data  = valid_generator,
                                  validation_steps = len(valid_generator) * valid_times,
-                                 callbacks        = [early_stop, checkpoint, tensorboard], 
+                                 callbacks        = [early_stop, checkpoint, tensorboard],
                                  workers          = 3,
-                                 max_queue_size   = 8)      
+                                 max_queue_size   = 8)
 
         ############################################
         # Compute mAP on the validation set
         ############################################
-        average_precisions = self.evaluate(valid_generator)     
+        average_precisions = self.evaluate(valid_generator)
 
         # print evaluation
         for label, average_precision in average_precisions.items():
             print(self.labels[label], '{:.4f}'.format(average_precision))
-        print('mAP: {:.4f}'.format(sum(average_precisions.values()) / len(average_precisions)))         
+        print('mAP: {:.4f}'.format(sum(average_precisions.values()) / len(average_precisions)))
 
-    def evaluate(self, 
-                 generator, 
+    def evaluate(self,
+                 generator,
                  iou_threshold=0.3,
                  score_threshold=0.3,
                  max_detections=100,
@@ -356,7 +356,7 @@ class YOLO_timeDist(object):
             save_path       : The path to save images with visualized detections to.
         # Returns
             A dict mapping class names to mAP scores.
-        """    
+        """
         # gather all detections and annotations
         all_detections     = [[None for i in range(generator.num_classes())] for j in range(generator.size())]
         all_annotations    = [[None for i in range(generator.num_classes())] for j in range(generator.size())]
@@ -366,33 +366,33 @@ class YOLO_timeDist(object):
 
             # make the boxes and the labels
             pred_boxes  = self.predict(raw_image)
-            
+
             score = np.array([box.score for box in pred_boxes])
-            pred_labels = np.array([box.label for box in pred_boxes])        
-            
+            pred_labels = np.array([box.label for box in pred_boxes])
+
             if len(pred_boxes) > 0:
-                pred_boxes = np.array([[box.xmin, box.ymin, box.xmax, box.ymax, box.score] for box in pred_boxes]) 
+                pred_boxes = np.array([[box.xmin, box.ymin, box.xmax, box.ymax, box.score] for box in pred_boxes])
             else:
-                pred_boxes = np.array([[]])  
-            
+                pred_boxes = np.array([[]])
+
             # sort the boxes and the labels according to scores
             score_sort = np.argsort(-score)
             pred_labels = pred_labels[score_sort]
             pred_boxes  = pred_boxes[score_sort]
-            
+
             # copy detections to all_detections
             for label in range(generator.num_classes()):
                 all_detections[i][label] = pred_boxes[pred_labels == label, :]
-                
+
             annotations = generator.load_annotation(i)
-            
+
             # copy detections to all_annotations
             for label in range(generator.num_classes()):
                 all_annotations[i][label] = annotations[annotations[:, 4] == label, :4].copy()
-                
+
         # compute mAP by comparing all detections and all annotations
         average_precisions = {}
-        
+
         for label in range(generator.num_classes()):
             false_positives = np.zeros((0,))
             true_positives  = np.zeros((0,))
@@ -444,10 +444,10 @@ class YOLO_timeDist(object):
             precision = true_positives / np.maximum(true_positives + false_positives, np.finfo(np.float64).eps)
 
             # compute average precision
-            average_precision  = compute_ap(recall, precision)  
+            average_precision  = compute_ap(recall, precision)
             average_precisions[label] = average_precision
 
-        return average_precisions    
+        return average_precisions
 
     def predict(self, image):
         image_h, image_w, _ = image.shape

@@ -43,9 +43,11 @@ Dataset => http://cvrr.ucsd.edu/vivachallenge/index.php/hands/hand-detection/
 ### 0. Requirement
 
 python 2.7
+numpy 
 
 keras >= 2.0.8
 
+tensorflow >= 1.4.0
 imgaug
 
 ### 1. Data preparation

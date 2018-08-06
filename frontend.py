@@ -245,6 +245,7 @@ class YOLO_timeDist(object):
                     no_object_scale,
                     coord_scale,
                     time_horizon,
+                    time_stride,
                     class_scale,
                     saved_weights_name='best_weights.h5',
                     debug=False):
@@ -255,8 +256,9 @@ class YOLO_timeDist(object):
         self.no_object_scale = no_object_scale
         self.coord_scale     = coord_scale
         self.class_scale     = class_scale
-
-        self.debug = debug
+        self.time_horiz      = time_horizon
+        self.time_stride     = time_stride
+        self.debug           = debug
 
         ############################################
         # Make train and validation generators
@@ -274,6 +276,7 @@ class YOLO_timeDist(object):
             'BATCH_SIZE'      : self.batch_size,
             'TRUE_BOX_BUFFER' : self.max_box_per_image,
             'TIME_HORIZON'    : self.time_horiz,
+            'TIME_STRIDE'     : self.time_stride,
         }
 
         train_generator = BatchGeneratorTimeSeq(train_imgs,

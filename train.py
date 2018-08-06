@@ -29,14 +29,18 @@ def _main_(args):
     ###############################
 
     # parse annotations of the training set
-    train_imgs, train_labels = parse_annotation(config['train']['train_annot_folder'], 
-                                                config['train']['train_image_folder'], 
+    train_imgs, train_labels = parse_annotation(config['train']['train_annot_folder'],
+                                                config['train']['train_image_folder'],
+                                                config['model']['time_horizon'],
+                                                config['model']['time_stride'],
                                                 config['model']['labels'])
 
     # parse annotations of the validation set, if any, otherwise split the training set
     if os.path.exists(config['valid']['valid_annot_folder']):
-        valid_imgs, valid_labels = parse_annotation(config['valid']['valid_annot_folder'], 
-                                                    config['valid']['valid_image_folder'], 
+        valid_imgs, valid_labels = parse_annotation(config['valid']['valid_annot_folder'],
+                                                    config['valid']['valid_image_folder'],
+                                                    config['model']['time_horizon'],
+                                                    config['model']['time_stride'],
                                                     config['model']['labels'])
     else:
         train_valid_split = int(0.8*len(train_imgs))
@@ -104,6 +108,7 @@ def _main_(args):
                coord_scale        = config['train']['coord_scale'],
                class_scale        = config['train']['class_scale'],
                time_horizon       = config['model']['time_horizon'],
+               time_stride        = config['model']['time_stride'],
                saved_weights_name = config['train']['saved_weights_name'],
                debug              = config['train']['debug'])
 

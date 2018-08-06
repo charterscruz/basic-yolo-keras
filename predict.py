@@ -7,7 +7,7 @@ import numpy as np
 from tqdm import tqdm
 from preprocessing import parse_annotation
 from utils import draw_boxes
-from frontend import YOLO
+from frontend import YOLO_timeDist
 import json
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -48,11 +48,11 @@ def _main_(args):
     #   Make the model 
     ###############################
 
-    yolo = YOLO(backend             = config['model']['backend'],
-                input_size          = config['model']['input_size'], 
-                labels              = config['model']['labels'], 
-                max_box_per_image   = config['model']['max_box_per_image'],
-                anchors             = config['model']['anchors'])
+    yolo = YOLO_timeDist(backend             = config['model']['backend'],
+                         input_size          = config['model']['input_size'],
+                         labels              = config['model']['labels'],
+                         max_box_per_image   = config['model']['max_box_per_image'],
+                         anchors             = config['model']['anchors'])
 
     ###############################
     #   Load trained weights

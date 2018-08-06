@@ -8,11 +8,23 @@ from keras.utils import Sequence
 import xml.etree.ElementTree as ET
 from utils import BoundBox, bbox_iou
 
-def parse_annotation(ann_dir, img_dir, labels=[]):
+def parse_annotation(ann_dir, img_dir, time_horizon, time_stride, labels=[]):
     all_imgs = []
 
     seen_labels = {}
-    for ann in sorted(os.listdir(ann_dir)):
+
+    # create list of annotations
+    prel_list = sorted(os.listdir(ann_dir))
+    validated_lst = list(prel_list)
+
+    for prel_ann in prel_list:
+        for time_inst in range(0, time_horizon):
+            file_in_seq = str(int(prel_ann[:-4]) - (time_inst*time_stride)) + '.xml'
+            if not os.path.isfile(ann_dir + file_in_seq):
+                validated_lst.remove(prel_ann)
+
+
+    for ann in sorted(validated_lst):
         img = {'object':[]}
 
         tree = ET.parse(ann_dir + ann)
@@ -71,6 +83,7 @@ class BatchGeneratorTimeSeq(Sequence):
         self.shuffle = shuffle
         self.jitter  = jitter
         self.norm    = norm
+
 
         self.anchors = [BoundBox(0, 0, config['ANCHORS'][2*i], config['ANCHORS'][2*i+1]) for i in range(int(len(config['ANCHORS'])//2))]
 
@@ -176,7 +189,10 @@ class BatchGeneratorTimeSeq(Sequence):
 
         for train_instance in self.images[l_bound:r_bound]:
             # augment input image and fix object's position and size
-            img, all_objs = self.aug_image(train_instance, jitter=self.jitter)
+            img, all_objs = self.aug_image(train_instance,
+                                           time_horizon= self.config['TIME_HORIZON'],
+                                           time_stride=self.config['TIME_STRIDE'],
+                                           jitter=self.jitter)
             
             # construct output from object's x, y, w, h
             true_box_index = 0
@@ -234,7 +250,7 @@ class BatchGeneratorTimeSeq(Sequence):
                 # plot image and bounding boxes for sanity check
                 for obj in all_objs:
                     if obj['xmax'] > obj['xmin'] and obj['ymax'] > obj['ymin']:
-                        cv2.rectangle(img[:,:,::-1], (obj['xmin'],obj['ymin']), (obj['xmax'],obj['ymax']), (255,0,0), 3)
+                        cv2.rectangle(img[:,:,::-1], (obj['xmin'],obj['ymin']), (obj['xmax'],obj['ymax']), (255, 0, 0), 3)
                         cv2.putText(img[:,:,::-1], obj['name'], 
                                     (obj['xmin']+2, obj['ymin']+12), 
                                     0, 1.2e-3 * img.shape[0], 
@@ -245,21 +261,35 @@ class BatchGeneratorTimeSeq(Sequence):
             # increase instance counter in current batch
             instance_count += 1  
 
-        #print(' new batch created', idx)
+        # print(' new batch created', idx)
 
         return [x_batch, b_batch], y_batch
 
     def on_epoch_end(self):
         if self.shuffle: np.random.shuffle(self.images)
 
-    def aug_image(self, train_instance, jitter):
-        image_name = train_instance['filename']
-        image = cv2.imread(image_name)
+    def aug_image(self, train_instance, time_horizon, time_stride, jitter):
 
-        if image is None: print('Cannot find ', image_name)
+        # print('train_instance[filename]: ', train_instance['filename'])
+        imgs_path, base_img = os.path.split(train_instance['filename'])
 
-        h, w, c = image.shape
-        all_objs = copy.deepcopy(train_instance['object'])
+        for img_number in range(0, time_horizon):
+            image_name_to_load = imgs_path + '/' + str(int(base_img[:-4]) - (img_number * time_stride)) + 'jpg'
+            # print('image_name_to_load', image_name_to_load)
+            image = cv2.imread(image_name_to_load)  # todo Here I must load more images
+            if image is None: print('Cannot find ', image_name)
+
+            h, w, c = image.shape
+            all_objs = copy.deepcopy(train_instance['object'])
+
+        # image_name = train_instance['filename']
+        #
+        # image = cv2.imread(image_name) # todo Here I must load more images
+
+        # if image is None: print('Cannot find ', image_name)
+        #
+        # h, w, c = image.shape
+        # all_objs = copy.deepcopy(train_instance['object'])
 
         if jitter:
             ### scale the image

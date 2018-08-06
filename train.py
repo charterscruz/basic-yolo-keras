@@ -8,7 +8,7 @@ from frontend import YOLO_timeDist
 import json
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 argparser = argparse.ArgumentParser(
     description='Train and validate YOLO_v2 model on any dataset')
@@ -66,12 +66,6 @@ def _main_(args):
     ###############################
     #   Construct the model 
     ###############################
-
-    # yolo = YOLO(backend             = config['model']['backend'],
-    #             input_size          = config['model']['input_size'],
-    #             labels              = config['model']['labels'],
-    #             max_box_per_image   = config['model']['max_box_per_image'],
-    #             anchors             = config['model']['anchors'])
     yolo = YOLO_timeDist(backend    = config['model']['backend'],
                 input_size          = config['model']['input_size'],
                 labels              = config['model']['labels'],
@@ -82,7 +76,6 @@ def _main_(args):
     ###############################
     #   Load the pretrained weights (if any) 
     ###############################    
-
     if os.path.exists(config['train']['pretrained_weights']):
         print("Loading pre-trained weights in", config['train']['pretrained_weights'])
         try:
@@ -94,7 +87,6 @@ def _main_(args):
     ###############################
     #   Start the training process 
     ###############################
-
     yolo.train(train_imgs         = train_imgs,
                valid_imgs         = valid_imgs,
                train_times        = config['train']['train_times'],

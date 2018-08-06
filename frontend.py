@@ -343,7 +343,7 @@ class YOLO_timeDist(object):
 
     def evaluate(self,
                  generator,
-                 iou_threshold=0.3,
+                 iou_threshold=0.1,
                  score_threshold=0.3,
                  max_detections=100,
                  save_path=None):
@@ -365,10 +365,10 @@ class YOLO_timeDist(object):
         all_annotations    = [[None for i in range(generator.num_classes())] for j in range(generator.size())]
 
         for i in range(generator.size()):
-            raw_image = generator.load_image(i)
+            raw_image_seq = generator.load_image(i, self.time_horiz, self.time_stride)
 
             # make the boxes and the labels
-            pred_boxes  = self.predict(raw_image)
+            pred_boxes  = self.predict(raw_image_seq)
 
             score = np.array([box.score for box in pred_boxes])
             pred_labels = np.array([box.label for box in pred_boxes])
@@ -452,12 +452,14 @@ class YOLO_timeDist(object):
 
         return average_precisions
 
-    def predict(self, image):
-        image_h, image_w, _ = image.shape
-        image = cv2.resize(image, (self.input_size, self.input_size))
-        image = self.feature_extractor.normalize(image)
+    def predict(self, image_seq):
+        time_horizon, image_h, image_w, _ = image_seq.shape
+        # for time_inst in range(0, time_horizon):
+        #     image = image_seq[time_inst, :, :, :]
+        #     image = cv2.resize(image, (self.input_size, self.input_size))
+        image_seq = self.feature_extractor.normalize(image_seq)
 
-        input_image = image[:,:,::-1]
+        input_image = image_seq[:, :, :, ::-1]
         input_image = np.expand_dims(input_image, 0)
         dummy_array = np.zeros((1,1,1,1,self.max_box_per_image,4))
 

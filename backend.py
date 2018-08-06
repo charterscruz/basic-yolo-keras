@@ -4,6 +4,7 @@ from keras.layers import Reshape, Activation, Conv2D, Input, MaxPooling2D, Batch
 from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.merge import concatenate
 from keras.layers import TimeDistributed
+from keras.layers.convolutional_recurrent import ConvLSTM2D
 from keras.models import load_model
 
 FULL_YOLO_BACKEND_PATH  = "full_yolo_backend.h5"   # should be hosted on a server
@@ -30,6 +31,7 @@ class BaseFeatureExtractor(object):
 
     def extract(self, input_image):
         return self.feature_extractor(input_image)
+
 
 class FullYoloFeature_TimeDist(BaseFeatureExtractor):
     """docstring for ClassName"""
@@ -176,3 +178,155 @@ class FullYoloFeature_TimeDist(BaseFeatureExtractor):
     def normalize(self, image):
         return image / 255.
 
+
+class FullYoloFeature_TimeDist_ConvLstm(BaseFeatureExtractor):
+    """docstring for ClassName"""
+    def __init__(self, time_horizon, input_size):
+        input_image = Input(shape=(time_horizon, input_size, input_size, 3))
+
+        # the function to implement the orgnization layer (thanks to github.com/allanzelener/YAD2K)
+        def space_to_depth_x2(x):
+            return tf.space_to_depth(x, block_size=2)
+
+        def last_time_instant(x):
+            y = x[:, -1, :, :, :]
+            return y
+
+        # Layer 1
+        x = TimeDistributed(Conv2D(32, (3,3), strides=(1,1), padding='same', name='conv_1', use_bias=False))(input_image)
+        x = TimeDistributed(BatchNormalization(name='norm_1'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+        x = TimeDistributed(MaxPooling2D(pool_size=(2, 2)))(x)
+
+        # Layer 2
+        x = TimeDistributed(Conv2D(64, (3,3), strides=(1,1), padding='same', name='conv_2', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_2'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+        x = TimeDistributed(MaxPooling2D(pool_size=(2, 2)))(x)
+
+        # Layer 3
+        x = TimeDistributed(Conv2D(128, (3,3), strides=(1,1), padding='same', name='conv_3', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_3'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+
+        # Layer 4
+        x = TimeDistributed(Conv2D(64, (1,1), strides=(1,1), padding='same', name='conv_4', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_4'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+
+        # Layer 5
+        x = TimeDistributed(Conv2D(128, (3,3), strides=(1,1), padding='same', name='conv_5', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_5'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+        x = TimeDistributed(MaxPooling2D(pool_size=(2, 2)))(x)
+
+        # Layer 6
+        x = TimeDistributed(Conv2D(256, (3,3), strides=(1,1), padding='same', name='conv_6', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_6'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+
+        # Layer 7
+        x = TimeDistributed(Conv2D(128, (1,1), strides=(1,1), padding='same', name='conv_7', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_7'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+
+        # Layer 8
+        x = TimeDistributed(Conv2D(256, (3,3), strides=(1,1), padding='same', name='conv_8', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_8'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+        x = TimeDistributed(MaxPooling2D(pool_size=(2, 2)))(x)
+
+        # Layer 9
+        x = TimeDistributed(Conv2D(512, (3, 3), strides=(1,1), padding='same', name='conv_9', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_9'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+
+        # Layer 10
+        x = TimeDistributed(Conv2D(256, (1, 1), strides=(1,1), padding='same', name='conv_10', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_10'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+
+        # Layer 11
+        x = TimeDistributed(Conv2D(512, (3, 3), strides=(1,1), padding='same', name='conv_11', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_11'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+
+        # Layer 12
+        x = TimeDistributed(Conv2D(256, (1, 1), strides=(1,1), padding='same', name='conv_12', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_12'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+
+        # Layer 13
+        x = TimeDistributed(Conv2D(512, (3, 3), strides=(1,1), padding='same', name='conv_13', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_13'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+
+        # skip_connection = x
+        skip_connection = ConvLSTM2D(512,
+                                     (3,3),
+                                     padding='same',
+                                     name='convlstm1',
+                                     return_sequences=False,
+                                     use_bias=False )(x)
+        skip_connection = BatchNormalization(name='norm_conv1')(skip_connection)
+        skip_connection = LeakyReLU(alpha=0.1)(skip_connection)
+
+        x = TimeDistributed(MaxPooling2D(pool_size=(2, 2)))(x)
+
+        # Layer 14
+        x = TimeDistributed(Conv2D(1024, (3,3), strides=(1,1), padding='same', name='conv_14', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_14'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+
+        # Layer 15
+        x = TimeDistributed(Conv2D(512, (1,1), strides=(1,1), padding='same', name='conv_15', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_15'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+
+        # Layer 16
+        x = TimeDistributed(Conv2D(1024, (3,3), strides=(1,1), padding='same', name='conv_16', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_16'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+
+        # Layer 17
+        x = TimeDistributed(Conv2D(512, (1,1), strides=(1,1), padding='same', name='conv_17', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_17'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+
+        # Layer 18
+        x = TimeDistributed(Conv2D(1024, (3,3), strides=(1,1), padding='same', name='conv_18', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_18'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+
+        # Layer 19
+        x = TimeDistributed(Conv2D(1024, (3,3), strides=(1,1), padding='same', name='conv_19', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_19'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+
+        # Layer 20
+        x = TimeDistributed(Conv2D(1024, (3,3), strides=(1,1), padding='same', name='conv_20', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_20'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
+
+        x = ConvLSTM2D(1024, (1, 1), padding='same', name='convlstm2', return_sequences=False, use_bias=False)(x)
+        x = TimeDistributed(BatchNormalization(name='norm_convlstm_20'))(x)
+        x = LeakyReLU(alpha=0.1)(x)
+
+        # Layer 21
+        skip_connection = Conv2D(64, (1,1), strides=(1,1), padding='same', name='conv_21', use_bias=False)(skip_connection)
+        skip_connection = BatchNormalization(name='norm_21')(skip_connection)
+        skip_connection = LeakyReLU(alpha=0.1)(skip_connection)
+        skip_connection = Lambda(space_to_depth_x2)(skip_connection)
+
+        x = concatenate([skip_connection, x])
+
+        # Layer 22
+        x = Conv2D(1024, (3,3), strides=(1,1), padding='same', name='conv_22', use_bias=False)(x)
+        x = BatchNormalization(name='norm_22')(x)
+        x = LeakyReLU(alpha=0.1)(x)
+
+        self.feature_extractor = Model(input_image, x)
+        self.feature_extractor.load_weights(FULL_YOLO_BACKEND_PATH, by_name=True)
+
+    def normalize(self, image):
+        return image / 255.

@@ -12,7 +12,7 @@ from keras.layers import TimeDistributed
 from keras.optimizers import SGD, Adam, RMSprop
 from preprocessing import BatchGeneratorTimeSeq
 from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
-from backend import FullYoloFeature_TimeDist
+from backend import FullYoloFeature_TimeDist, FullYoloFeature_TimeDist_ConvLstm
 
 class YOLO_timeDist(object):
     def __init__(self, backend,
@@ -43,6 +43,8 @@ class YOLO_timeDist(object):
 
         if backend == 'Full Yolo TimeDist':
             self.feature_extractor = FullYoloFeature_TimeDist(self.time_horiz, self.input_size)
+        if backend == 'Full Yolo TimeDist ConvLstm':
+            self.feature_extractor = FullYoloFeature_TimeDist_ConvLstm(self.time_horiz, self.input_size)
         else:
             raise Exception('Architecture not supported! Only support Full Yolo, Tiny Yolo, MobileNet, SqueezeNet, VGG16, ResNet50, and Inception3 at the moment!')
 

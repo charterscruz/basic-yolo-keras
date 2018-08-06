@@ -23,7 +23,7 @@ def parse_annotation(ann_dir, img_dir, time_horizon, time_stride, labels=[]):
             file_in_seq = str(int(prel_ann[:-4]) - (time_inst*time_stride)) + '.xml'
             if not os.path.isfile(ann_dir + file_in_seq):
                 validated_lst.remove(prel_ann)
-
+                break
 
     for ann in sorted(validated_lst):
         img = {'object':[]}

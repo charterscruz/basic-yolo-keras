@@ -35,6 +35,8 @@ def _main_(args):
                                                 config['model']['time_stride'],
                                                 config['model']['labels'])
 
+    print('number of sequential annotations: ', len(train_imgs))
+
     # parse annotations of the validation set, if any, otherwise split the training set
     if os.path.exists(config['valid']['valid_annot_folder']):
         valid_imgs, valid_labels = parse_annotation(config['valid']['valid_annot_folder'],

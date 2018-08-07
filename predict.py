@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import sys
 import cv2
 import numpy as np
 from tqdm import tqdm
@@ -52,7 +53,8 @@ def _main_(args):
                          input_size          = config['model']['input_size'],
                          labels              = config['model']['labels'],
                          max_box_per_image   = config['model']['max_box_per_image'],
-                         anchors             = config['model']['anchors'])
+                         anchors             = config['model']['anchors'],
+                         time_horizon        = config['model']['time_horizon'] )
 
     ###############################
     #   Load trained weights
@@ -68,37 +70,56 @@ def _main_(args):
         video_out = image_path[:-4] + '_detected' + image_path[-4:]
         video_reader = cv2.VideoCapture(image_path)
 
-        nb_frames = int(video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
-        #frame_h = int(video_reader.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        #frame_w = int(video_reader.get(cv2.CAP_PROP_FRAME_WIDTH))
         frame_h = height
         frame_w = width
 
-        video_writer = cv2.VideoWriter(video_out,
-                               cv2.VideoWriter_fourcc(*'MPEG'), 
-                               50.0, 
-                               (frame_w, frame_h))
-        # OPEN RESULTS  file
-        results_file = open(
-            image_path[:-4] + '.results.txt', 'w+')
+        if int(cv2.__version__[0]) == 3:
+            nb_frames = int(video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
+            video_writer = cv2.VideoWriter(video_out,
+                                           cv2.VideoWriter_fourcc(*'MPEG'),
+                                           50.0,
+                                           (frame_w, frame_h))
+        else:
+            nb_frames = int(video_reader.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
+            video_writer = cv2.VideoWriter(video_out,
+                                           cv2.VideoWriter_fourcc(*'MPEG'),
+                                           50.0,
+                                           (frame_w, frame_h))
 
+        # OPEN RESULTS  file
+        results_file = open(image_path[:-4] + '.results.txt', 'w+')
+
+        full_tensor = np.empty((config['model']['time_horizon'] * config['model']['time_stride'],
+                                config['model']['input_size'],
+                                config['model']['input_size'],
+                                3))
 
         for i in tqdm(range(nb_frames)):
             _, image = video_reader.read()
-            
-            boxes = yolo.predict(image)
-            image = draw_boxes(image, boxes, config['model']['labels'])
 
-            for bb in range(0,len(boxes)):
-                left_coor = boxes[bb].xmin * width
-                right_coor = boxes[bb].xmax * width
-                top_coor = boxes[bb].ymin * height
-                bottom_coor = boxes[bb].ymax * height
-                scoring = boxes[bb].score
+            full_tensor[-1, :, :, :] = cv2.resize(image,
+                                                  (config['model']['input_size'], config['model']['input_size']))
 
-                results_file.write(str(i) + ' ' + str(left_coor) + ' ' + str(top_coor) + ' ' +
-                                str(right_coor - left_coor) + ' ' + str(bottom_coor - top_coor) + ' 1 ' +
-                                str(scoring) + '\n')
+            if i >= config['model']['time_horizon'] * config['model']['time_stride']:
+                # pass
+
+                time_sampled_tensor = full_tensor[::-config['model']['time_stride'], :, :, :]
+
+                boxes = yolo.predict(time_sampled_tensor[::-1, :, :, :])
+                image = draw_boxes(image, boxes, config['model']['labels'])
+
+                for bb in range(0,len(boxes)):
+                    left_coor = boxes[bb].xmin * width
+                    right_coor = boxes[bb].xmax * width
+                    top_coor = boxes[bb].ymin * height
+                    bottom_coor = boxes[bb].ymax * height
+                    scoring = boxes[bb].score
+
+                    results_file.write(str(i) + ' ' + str(left_coor) + ' ' + str(top_coor) + ' ' +
+                                       str(right_coor - left_coor) + ' ' + str(bottom_coor - top_coor) + ' 1 ' +
+                                       str(scoring) + '\n')
+
+            full_tensor = np.roll(full_tensor, -1, axis=0)
 
             video_writer.write(np.uint8(image))
 
@@ -107,13 +128,15 @@ def _main_(args):
         video_writer.release()
 
     else:
-        image = cv2.imread(image_path)
-        boxes = yolo.predict(image)
-        image = draw_boxes(image, boxes, config['model']['labels'])
+        print('could not find video. Exiting!')
+        sys.error('could not find video. Exiting!')
+        # image = cv2.imread(image_path)
+        # boxes = yolo.predict(image)
+        # image = draw_boxes(image, boxes, config['model']['labels'])
 
-        print(len(boxes), 'boxes are found')
-
-        cv2.imwrite(image_path[:-4] + '_detected' + image_path[-4:], image)
+        # print(len(boxes), 'boxes are found')
+        #
+        # cv2.imwrite(image_path[:-4] + '_detected' + image_path[-4:], image)
 
 
 

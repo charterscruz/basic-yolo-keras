@@ -457,11 +457,11 @@ class YOLO_timeDist(object):
         #     image = cv2.resize(image, (self.input_size, self.input_size))
         image_seq = self.feature_extractor.normalize(image_seq)
 
-        input_image = image_seq[:, :, :, ::-1]
-        input_image = np.expand_dims(input_image, 0)
+        # input_image = image_seq[:, :, :, ::-1]
+        image_seq = np.expand_dims(image_seq, 0)
         dummy_array = np.zeros((1,1,1,1,self.max_box_per_image,4))
 
-        netout = self.model.predict([input_image, dummy_array])[0]
+        netout = self.model.predict([image_seq, dummy_array])[0]
         # print(netout)
         boxes  = decode_netout(netout, self.anchors, self.nb_class)
 

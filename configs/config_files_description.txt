@@ -1,0 +1,8 @@
+config_boat_timedist.json
+    This file was created just to test the first implementation of time distributed network.
+    A model was obtained with this config file -->  full_yolo_retrain_boat_timedist.h5
+
+
+config_boat_timedist_convlstm.json
+    This file was created to use the convLSTM.
+    The first training was done using time horizon of 2 and stride of 2 --> full_yolo_retrain_boat_timedist_convlstm_2_2.h5

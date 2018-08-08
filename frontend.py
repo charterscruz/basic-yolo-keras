@@ -53,10 +53,10 @@ class YOLO_timeDist(object):
 
         # make the object detection layer
         output = TimeDistributed(Conv2D(self.nb_box * (4 + 1 + self.nb_class),
-                        (1,1), strides=(1, 1),
-                        padding='same', 
-                        name='DetectionLayer', 
-                        kernel_initializer='lecun_normal'))(time_features)
+                                 (1,1), strides=(1, 1),
+                                 padding='same',
+                                 name='DetectionLayer',
+                                 kernel_initializer='lecun_normal'))(time_features)
         output = ConvLSTM2D(30, (1,1),
                                      padding='same',
                                      name='convlstm_final',
@@ -286,12 +286,12 @@ class YOLO_timeDist(object):
         }
 
         train_generator = BatchGeneratorTimeSeq(train_imgs,
-                                     generator_config,
-                                     norm=self.feature_extractor.normalize)
+                                                generator_config,
+                                                norm=self.feature_extractor.normalize)
         valid_generator = BatchGeneratorTimeSeq(valid_imgs,
-                                     generator_config,
-                                     norm=self.feature_extractor.normalize,
-                                     jitter=False)
+                                                generator_config,
+                                                norm=self.feature_extractor.normalize,
+                                                jitter=False)
 
         self.warmup_batches  = warmup_epochs * (train_times*len(train_generator) + valid_times*len(valid_generator))
 

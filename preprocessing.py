@@ -29,7 +29,7 @@ def parse_annotation(ann_dir, img_dir, time_horizon, time_stride, labels=[]):
         img = {'object':[]}
 
         tree = ET.parse(ann_dir + ann)
-        
+
         for elem in tree.iter():
             if 'filename' in elem.tag:
                 img['filename'] = img_dir + elem.text
@@ -67,8 +67,58 @@ def parse_annotation(ann_dir, img_dir, time_horizon, time_stride, labels=[]):
 
         if len(img['object']) > 0:
             all_imgs += [img]
+
+        seq = {'object':[]}
+
+        for time_inst in range(0, time_horizon):
+
+            plant = ET.parse(ann_dir + str(int(ann[:-4]) - (time_inst*time_stride)) + '.xml')
+
+            for elem in plant.iter():
+                if 'filename' in elem.tag:
+                    img['filename'] = img_dir + elem.text
+                if 'width' in elem.tag:
+                    img['width'] = int(elem.text)
+                if 'height' in elem.tag:
+                    img['height'] = int(elem.text)
+                if 'object' in elem.tag or 'part' in elem.tag:
+                    obj = {}
+
+                    for attr in list(elem):
+                        if 'name' in attr.tag:
+                            obj['name'] = attr.text
+
+                            if obj['name'] in seen_labels:
+                                seen_labels[obj['name']] += 1
+                            else:
+                                seen_labels[obj['name']] = 1
+
+                            if len(labels) > 0 and obj['name'] not in labels:
+                                break
+                            else:
+                                img['object'] += [obj]
+
+                        if 'bndbox' in attr.tag:
+                            for dim in list(attr):
+                                if 'xmin' in dim.tag:
+                                    obj['xmin'] = int(round(float(dim.text)))
+                                if 'ymin' in dim.tag:
+                                    obj['ymin'] = int(round(float(dim.text)))
+                                if 'xmax' in dim.tag:
+                                    obj['xmax'] = int(round(float(dim.text)))
+                                if 'ymax' in dim.tag:
+                                    obj['ymax'] = int(round(float(dim.text)))
+
+            all_seq.append
+
+        if len(forest) > 0:
+            all_seqs += [seq]
+
+        # if len(img['object']) > 0:
+        #     all_imgs += [img]
                         
-    return all_imgs, seen_labels
+    return all_imgs, seen_labels, forest.reverse()
+
 
 class BatchGeneratorTimeSeq(Sequence):
     def __init__(self, images, 
@@ -87,7 +137,7 @@ class BatchGeneratorTimeSeq(Sequence):
 
         self.anchors = [BoundBox(0, 0, config['ANCHORS'][2*i], config['ANCHORS'][2*i+1]) for i in range(int(len(config['ANCHORS'])//2))]
 
-        ### augmentors by https://github.com/aleju/imgaug
+        # augmentors by https://github.com/aleju/imgaug
         sometimes = lambda aug: iaa.Sometimes(0.5, aug)
 
         # Define our sequence of augmentation steps that will be applied to every image
@@ -189,15 +239,19 @@ class BatchGeneratorTimeSeq(Sequence):
         instance_count = 0
 
         x_batch = np.zeros((r_bound - l_bound, self.config['TIME_HORIZON'], self.config['IMAGE_H'], self.config['IMAGE_W'], 3))                         # input images
-        b_batch = np.zeros((r_bound - l_bound, 1     , 1     , 1    ,  self.config['TRUE_BOX_BUFFER'], 4))   # list of self.config['TRUE_self.config['BOX']_BUFFER'] GT boxes
-        y_batch = np.zeros((r_bound - l_bound, self.config['GRID_H'],
+        # b_batch = np.zeros((r_bound - l_bound, 1     , 1     , 1    ,  self.config['TRUE_BOX_BUFFER'], 4))   # list of self.config['TRUE_self.config['BOX']_BUFFER'] GT boxes
+        b_batch = np.zeros((r_bound - l_bound, self.config['TIME_HORIZON'], 1     , 1     , 1    ,  self.config['TRUE_BOX_BUFFER'], 4))   # list of self.config['TRUE_self.config['BOX']_BUFFER'] GT boxes
+        y_batch = np.zeros((r_bound - l_bound,
+                            self.config['TIME_HORIZON'],
+                            self.config['GRID_H'],
                             self.config['GRID_W'],
                             self.config['BOX'],
                             4+1+len(self.config['LABELS'])))                # desired network output
 
         for train_instance in self.images[l_bound:r_bound]:
             # augment input image and fix object's position and size
-            img_tensor, all_objs = self.aug_image(train_instance,
+            train_instance_tensor
+            img_tensor, all_objs, objs_list = self.aug_image(train_instance,
                                            time_horizon= self.config['TIME_HORIZON'],
                                            time_stride=self.config['TIME_STRIDE'],
                                            jitter=self.jitter)
@@ -241,12 +295,12 @@ class BatchGeneratorTimeSeq(Sequence):
                                 max_iou = iou
                                 
                         # assign ground truth x, y, w, h, confidence and class probs to y_batch
-                        y_batch[instance_count, grid_y, grid_x, best_anchor, 0:4] = box
+                        y_batch[instance_count, grid_y, grid_x, best_anchor, 0:4] = box # todo
                         y_batch[instance_count, grid_y, grid_x, best_anchor, 4] = 1.
                         y_batch[instance_count, grid_y, grid_x, best_anchor, 5 + obj_indx] = 1
                         
                         # assign the true box to b_batch
-                        b_batch[instance_count, 0, 0, 0, true_box_index] = box
+                        b_batch[instance_count, 0, 0, 0, true_box_index] = box # todo
                         
                         true_box_index += 1
                         true_box_index = true_box_index % self.config['TRUE_BOX_BUFFER']

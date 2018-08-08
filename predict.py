@@ -6,7 +6,7 @@ import sys
 import cv2
 import numpy as np
 from tqdm import tqdm
-from preprocessing import parse_annotation
+# from preprocessing import parse_annotation
 from utils import draw_boxes
 from frontend import YOLO_timeDist
 import json
@@ -54,7 +54,7 @@ def _main_(args):
         cv2.namedWindow('img', 0)
         cv2.resizeWindow('img', 192, 108)
 
-    results_string = '_3_3_box3'
+    results_string = '_3_3_box3_fullseq'
 
     with open(config_path) as config_buffer:    
         config = json.load(config_buffer)

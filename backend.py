@@ -27,7 +27,7 @@ class BaseFeatureExtractor(object):
         raise NotImplementedError("error message")       
 
     def get_output_shape(self):
-        return self.feature_extractor.get_output_shape_at(-1)[1:3]
+        return self.feature_extractor.get_output_shape_at(-1)[1:4]
 
     def extract(self, input_image):
         return self.feature_extractor(input_image)
@@ -308,7 +308,7 @@ class FullYoloFeature_TimeDist_ConvLstm(BaseFeatureExtractor):
         x = TimeDistributed(BatchNormalization(name='norm_20'))(x)
         x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
 
-        x = ConvLSTM2D(1024, (1, 1), padding='same', name='convlstm2', return_sequences=False, use_bias=False)(x)
+        x = ConvLSTM2D(1024, (1, 1), padding='same', name='convlstm2', return_sequences=True, use_bias=False)(x)
         x = TimeDistributed(BatchNormalization(name='norm_convlstm_20'))(x)
         x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
 

@@ -9,6 +9,8 @@ from keras.optimizers import Adam
 from preprocessing import BatchGeneratorTimeSeq
 from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from backend import FullYoloFeature_TimeDist, FullYoloFeature_TimeDist_ConvLstm
+from keras.layers import TimeDistributed
+from keras.layers.convolutional_recurrent import ConvLSTM2D
 
 class YOLO_timeDist(object):
     def __init__(self, backend,
@@ -45,17 +47,23 @@ class YOLO_timeDist(object):
             raise Exception('Architecture not supported! Only support Full Yolo, Tiny Yolo, MobileNet, SqueezeNet, VGG16, ResNet50, and Inception3 at the moment!')
 
         # print(self.feature_extractor.get_output_shape())
-        self.grid_h, self.grid_w = self.feature_extractor.get_output_shape()        
+        _, self.grid_h, self.grid_w = self.feature_extractor.get_output_shape()
         # features = self.feature_extractor.extract(input_image)
         time_features = self.feature_extractor.extract(input_image)
 
         # make the object detection layer
-        output = Conv2D(self.nb_box * (4 + 1 + self.nb_class), 
+        output = TimeDistributed(Conv2D(self.nb_box * (4 + 1 + self.nb_class),
                         (1,1), strides=(1, 1),
                         padding='same', 
                         name='DetectionLayer', 
-                        kernel_initializer='lecun_normal')(time_features)
+                        kernel_initializer='lecun_normal'))(time_features)
+        output = ConvLSTM2D(30, (1,1),
+                                     padding='same',
+                                     name='convlstm_final',
+                                     return_sequences=False,
+                                     use_bias=False )(output)
         output = Reshape((self.grid_h, self.grid_w, self.nb_box, 4 + 1 + self.nb_class))(output)
+
         output = Lambda(lambda args: args[0])([output, self.true_boxes])
 
         self.model = Model([input_image, self.true_boxes], output)

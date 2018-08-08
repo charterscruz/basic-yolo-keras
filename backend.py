@@ -266,10 +266,10 @@ class FullYoloFeature_TimeDist_ConvLstm(BaseFeatureExtractor):
                                      (3,3),
                                      padding='same',
                                      name='convlstm1',
-                                     return_sequences=False,
+                                     return_sequences=True,
                                      use_bias=False )(x)
-        skip_connection = BatchNormalization(name='norm_conv1')(skip_connection)
-        skip_connection = LeakyReLU(alpha=0.1)(skip_connection)
+        skip_connection = TimeDistributed(BatchNormalization(name='norm_conv1'))(skip_connection)
+        skip_connection = TimeDistributed(LeakyReLU(alpha=0.1))(skip_connection)
 
         x = TimeDistributed(MaxPooling2D(pool_size=(2, 2)))(x)
 
@@ -310,20 +310,20 @@ class FullYoloFeature_TimeDist_ConvLstm(BaseFeatureExtractor):
 
         x = ConvLSTM2D(1024, (1, 1), padding='same', name='convlstm2', return_sequences=False, use_bias=False)(x)
         x = TimeDistributed(BatchNormalization(name='norm_convlstm_20'))(x)
-        x = LeakyReLU(alpha=0.1)(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
 
         # Layer 21
-        skip_connection = Conv2D(64, (1,1), strides=(1,1), padding='same', name='conv_21', use_bias=False)(skip_connection)
-        skip_connection = BatchNormalization(name='norm_21')(skip_connection)
-        skip_connection = LeakyReLU(alpha=0.1)(skip_connection)
-        skip_connection = Lambda(space_to_depth_x2)(skip_connection)
+        skip_connection = TimeDistributed(Conv2D(64, (1,1), strides=(1,1), padding='same', name='conv_21', use_bias=False))(skip_connection)
+        skip_connection = TimeDistributed(BatchNormalization(name='norm_21'))(skip_connection)
+        skip_connection = TimeDistributed(LeakyReLU(alpha=0.1))(skip_connection)
+        skip_connection = TimeDistributed(Lambda(space_to_depth_x2))(skip_connection)
 
         x = concatenate([skip_connection, x])
 
         # Layer 22
-        x = Conv2D(1024, (3,3), strides=(1,1), padding='same', name='conv_22', use_bias=False)(x)
-        x = BatchNormalization(name='norm_22')(x)
-        x = LeakyReLU(alpha=0.1)(x)
+        x = TimeDistributed(Conv2D(1024, (3,3), strides=(1,1), padding='same', name='conv_22', use_bias=False))(x)
+        x = TimeDistributed(BatchNormalization(name='norm_22'))(x)
+        x = TimeDistributed(LeakyReLU(alpha=0.1))(x)
 
         self.feature_extractor = Model(input_image, x)
         self.feature_extractor.load_weights(FULL_YOLO_BACKEND_PATH, by_name=True)

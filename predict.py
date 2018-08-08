@@ -32,15 +32,29 @@ argparser.add_argument(
     '--input',
     help='path to an image or an video (mp4 format)')
 
+argparser.add_argument(
+    '-d',
+    '--display',
+    type=int,
+    help='display images or not')
+
 def _main_(args):
     config_path  = args.conf
     weights_path = args.weights
     image_path   = args.input
+    display      = args.display
+
+    width = 1920
+    height = 1080
 
     # width = 1024
     # height = 768
-    width = 1920
-    height = 1080
+
+    if display:
+        cv2.namedWindow('img', 0)
+        cv2.resizeWindow('img', 192, 108)
+
+    results_string = '_3_3_box3'
 
     with open(config_path) as config_buffer:    
         config = json.load(config_buffer)
@@ -67,7 +81,7 @@ def _main_(args):
     ###############################
 
     if image_path[-4:] == '.mp4' or image_path[-4:] == '.avi':
-        video_out = image_path[:-4] + '_detected' + image_path[-4:]
+        video_out = image_path[:-4] + '_' + results_string + image_path[-4:]
         video_reader = cv2.VideoCapture(image_path)
 
         frame_h = height
@@ -87,7 +101,7 @@ def _main_(args):
                                            (frame_w, frame_h))
 
         # OPEN RESULTS  file
-        results_file = open(image_path[:-4] + '.results.txt', 'w+')
+        results_file = open(image_path[:-4] + results_string + '.results.txt', 'w+')
 
         full_tensor = np.empty((config['model']['time_horizon'] * config['model']['time_stride'],
                                 config['model']['input_size'],
@@ -101,12 +115,15 @@ def _main_(args):
                                                   (config['model']['input_size'], config['model']['input_size']))
 
             if i >= config['model']['time_horizon'] * config['model']['time_stride']:
-                # pass
 
                 time_sampled_tensor = full_tensor[::-config['model']['time_stride'], :, :, :]
 
                 boxes = yolo.predict(time_sampled_tensor[::-1, :, :, :])
                 image = draw_boxes(image, boxes, config['model']['labels'])
+
+                if display:
+                    cv2.imshow('img', image)
+                    cv2.waitKey(1)
 
                 for bb in range(0,len(boxes)):
                     left_coor = boxes[bb].xmin * width
@@ -137,7 +154,6 @@ def _main_(args):
         # print(len(boxes), 'boxes are found')
         #
         # cv2.imwrite(image_path[:-4] + '_detected' + image_path[-4:], image)
-
 
 
 if __name__ == '__main__':

@@ -299,17 +299,17 @@ class YOLO_timeDist(object):
         ############################################
 
         early_stop = EarlyStopping(monitor='val_loss',
-                           min_delta=0.00001,
-                           patience=5,
-                           mode='min',
-                           verbose=1)
+                                   min_delta=0.00001,
+                                   patience=20,
+                                   mode='min',
+                                   verbose=1)
         checkpoint = ModelCheckpoint(saved_weights_name,
                                      monitor='val_loss',
                                      verbose=1,
                                      save_best_only=True,
                                      mode='min',
                                      period=1)
-        tensorboard = TensorBoard(log_dir=os.path.expanduser('~/logs/'),
+        tensorboard = TensorBoard(log_dir=os.path.expanduser('~/logs/convlstm_yolo' + str(time_horizon) + '_' + str(time_stride)),
                                   histogram_freq=0,
                                   #write_batch_performance=True,
                                   write_graph=True,

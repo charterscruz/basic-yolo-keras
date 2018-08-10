@@ -326,6 +326,19 @@ class FullYoloFeature_TimeDist_ConvLstm(BaseFeatureExtractor):
         x = LeakyReLU(alpha=0.1)(x)
 
         self.feature_extractor = Model(input_image, x)
+
+        # config_boat_timedist_convlstm.json
+
+        #load old model
+        old_model = load_model('models/full_yolo_retrain_boat.h5')
+
+        for _, new_layer in enumerate(self.feature_extractor.layers):
+            print new_layer.layer.name
+
+            for _, old_layer in enumerate(old_model.layers):
+
+
+
         self.feature_extractor.load_weights(FULL_YOLO_BACKEND_PATH, by_name=True)
 
     def normalize(self, image):

@@ -25,7 +25,7 @@
         "coord_scale":          1.0,
         "class_scale":          1.0,
 
-	"saved_weights_name":   "full_yolo_retrain_boat_timedist_convlstm_3_3_v2.h5",
+	"saved_weights_name":   "fyolo_refine_boat_timedist_convlstm_3_3_.h5",
         "debug":                false
     },
 

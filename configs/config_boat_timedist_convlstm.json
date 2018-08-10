@@ -3,10 +3,10 @@
         "backend":              "Full Yolo TimeDist ConvLstm",
         "input_size":           416,
         "anchors":              [0.14, 0.17, 1.87446, 0.17,0.16, 0.23,0.29, 0.26,0.44, 0.42],
-        "max_box_per_image":    3,
+        "max_box_per_image":    10,
         "labels":               ["boat"],
-        "time_horizon":         3,
-        "time_stride":          3
+        "time_horizon":         5,
+        "time_stride":          4
     },
 
     "train": {
@@ -18,14 +18,14 @@
         "batch_size":           8,
         "learning_rate":        1e-4,
         "nb_epochs":            70,
-        "warmup_epochs":        3,
+        "warmup_epochs":        1,
 
         "object_scale":         5.0 ,
         "no_object_scale":      1.0,
         "coord_scale":          1.0,
         "class_scale":          1.0,
 
-	"saved_weights_name":   "full_yolo_retrain_boat_timedist_convlstm_3_3_v2.h5",
+	"saved_weights_name":   "full_yolo_refine_boat_timedist_convlstm_5_4.h5",
         "debug":                false
     },
 

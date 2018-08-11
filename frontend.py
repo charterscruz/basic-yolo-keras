@@ -70,23 +70,28 @@ class YOLO_timeDist(object):
                         new_layer.weights[:] = old_layer.weights[:]
                         new_layer.trainable = False
 
-        del old_layer
 
         # print(self.feature_extractor.get_output_shape())
-        self.grid_h, self.grid_w = self.feature_extractor.get_output_shape()        
+        self.grid_h, self.grid_w = self.feature_extractor.get_output_shape()
         # features = self.feature_extractor.extract(input_image)
         time_features = self.feature_extractor.extract(input_image)
 
         # make the object detection layer
-        output = Conv2D(self.nb_box * (4 + 1 + self.nb_class), 
+        output = Conv2D(self.nb_box * (4 + 1 + self.nb_class),
                         (1,1), strides=(1, 1),
-                        padding='same', 
-                        name='DetectionLayer', 
+                        padding='same',
+                        name='DetectionLayer',
                         kernel_initializer='lecun_normal')(time_features)
         output = Reshape((self.grid_h, self.grid_w, self.nb_box, 4 + 1 + self.nb_class))(output)
         output = Lambda(lambda args: args[0])([output, self.true_boxes])
 
         self.model = Model([input_image, self.true_boxes], output)
+
+        self.model.layers[2].weights[:] = old_yolo.model.layers[2].weights[:]
+        self.model.layers[2].trainable = False
+
+
+        del old_yolo
 
         # initialize the weights of the detection layer
         layer = self.model.layers[-4]

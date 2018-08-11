@@ -2,9 +2,8 @@
     "model" : {
         "backend":              "Full Yolo",
         "input_size":           416,
-        "anchors":              [0.14, 0.17, 1.87446, 0.17,0.16, 0.23,0.29, 0.26,0.44, 0.42],
-
-        "max_box_per_image":    10,        
+        "anchors":              [0.15,  0.17, 0.21, 0.39, 0.27, 0.28, 0.39, 0.25, 0.44, 0.34],
+        "max_box_per_image":    10,
         "labels":               ["boat"]
     },
 
@@ -24,7 +23,7 @@
         "coord_scale":          1.0,
         "class_scale":          1.0,
 
-	"saved_weights_name":   "full_yolo_retrain_boatv3.h5",
+	"saved_weights_name":   "full_yolo_retrain_boatv4.h5",
         "debug":                false
     },
 

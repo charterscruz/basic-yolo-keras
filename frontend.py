@@ -5,7 +5,7 @@ import numpy as np
 import os
 import cv2
 from utils import decode_netout, compute_overlap, compute_ap
-from keras.optimizers import Adam
+from keras.optimizers import Adam, adadelta
 from preprocessing import BatchGeneratorTimeSeq
 from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from backend import FullYoloFeature_TimeDist, FullYoloFeature_TimeDist_ConvLstm, FullYoloFeature
@@ -324,8 +324,8 @@ class YOLO_timeDist(object):
         # Compile the model
         ############################################
 
-        optimizer = Adam(lr=learning_rate, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-        self.model.compile(loss=self.custom_loss, optimizer=optimizer)
+        # optimizer = Adam(lr=learning_rate, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+        self.model.compile(loss=self.custom_loss, optimizer='adadelta')
 
         ############################################
         # Make a few callbacks

@@ -306,7 +306,7 @@ class YOLO(object):
 
         early_stop = EarlyStopping(monitor='val_loss', 
                            min_delta=0.00001, 
-                           patience=5, 
+                           patience=20, 
                            mode='min', 
                            verbose=1)
         checkpoint = ModelCheckpoint(saved_weights_name, 

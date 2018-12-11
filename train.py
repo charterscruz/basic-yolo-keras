@@ -96,6 +96,7 @@ def _main_(args):
                saved_weights_name = config['train']['saved_weights_name'],
                debug              = config['train']['debug'])
 
+
 if __name__ == '__main__':
     args = argparser.parse_args()
     _main_(args)

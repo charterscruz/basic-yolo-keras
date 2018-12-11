@@ -70,7 +70,6 @@ class YOLO(object):
 
         self.model = Model([input_image, self.true_boxes], output)
 
-        
         # initialize the weights of the detection layer
         layer = self.model.layers[-4]
         weights = layer.get_weights()

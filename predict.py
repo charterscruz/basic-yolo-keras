@@ -8,7 +8,7 @@ import numpy as np
 from tqdm import tqdm
 from preprocessing import parse_annotation
 from utils import draw_boxes
-from frontend import YOLO_timeDist
+from frontend import YOLO
 import json
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -63,12 +63,11 @@ def _main_(args):
     #   Make the model 
     ###############################
 
-    yolo = YOLO_timeDist(backend             = config['model']['backend'],
-                         input_size          = config['model']['input_size'],
-                         labels              = config['model']['labels'],
-                         max_box_per_image   = config['model']['max_box_per_image'],
-                         anchors             = config['model']['anchors'],
-                         time_horizon        = config['model']['time_horizon'] )
+    yolo = YOLO(backend             = config['model']['backend'],
+                input_size          = config['model']['input_size'],
+                labels              = config['model']['labels'],
+                max_box_per_image   = config['model']['max_box_per_image'],
+                anchors             = config['model']['anchors'])
 
     ###############################
     #   Load trained weights
@@ -104,40 +103,44 @@ def _main_(args):
         # OPEN RESULTS  file
         results_file = open(image_path[:-4] + results_string + '.results.txt', 'w+')
 
-        full_tensor = np.empty((config['model']['time_horizon'] * config['model']['time_stride'],
-                                config['model']['input_size'],
+        # full_tensor = np.empty((config['model']['time_horizon'] * config['model']['time_stride'],
+        #                         config['model']['input_size'],
+        #                         config['model']['input_size'],
+        #                         3))
+
+        full_tensor = np.empty((config['model']['input_size'],
                                 config['model']['input_size'],
                                 3))
 
         for i in tqdm(range(nb_frames)):
             _, image = video_reader.read()
 
-            full_tensor[-1, :, :, :] = cv2.resize(image,
+            full_tensor[:, :, :] = cv2.resize(image,
                                                   (config['model']['input_size'], config['model']['input_size']))
 
-            if i >= config['model']['time_horizon'] * config['model']['time_stride']:
+            # if i >= config['model']['time_horizon'] * config['model']['time_stride']:
 
-                time_sampled_tensor = full_tensor[::-config['model']['time_stride'], :, :, :]
+                # time_sampled_tensor = full_tensor[::-config['model']['time_stride'], :, :, :]
 
-                boxes = yolo.predict(time_sampled_tensor[::-1, :, :, :])
-                image = draw_boxes(image, boxes, config['model']['labels'])
+            boxes = yolo.predict(full_tensor[:, :, :])
+            image = draw_boxes(image, boxes, config['model']['labels'])
 
-                if display:
-                    cv2.imshow('img', image)
-                    cv2.waitKey(1)
+            if display:
+                cv2.imshow('img', image)
+                cv2.waitKey(1)
 
-                for bb in range(0,len(boxes)):
-                    left_coor = boxes[bb].xmin * width
-                    right_coor = boxes[bb].xmax * width
-                    top_coor = boxes[bb].ymin * height
-                    bottom_coor = boxes[bb].ymax * height
-                    scoring = boxes[bb].score
+            for bb in range(0,len(boxes)):
+                left_coor = boxes[bb].xmin * width
+                right_coor = boxes[bb].xmax * width
+                top_coor = boxes[bb].ymin * height
+                bottom_coor = boxes[bb].ymax * height
+                scoring = boxes[bb].score
 
-                    results_file.write(str(i) + ' ' + str(left_coor) + ' ' + str(top_coor) + ' ' +
-                                       str(right_coor - left_coor) + ' ' + str(bottom_coor - top_coor) + ' 1 ' +
-                                       str(scoring) + '\n')
+                results_file.write(str(i) + ' ' + str(left_coor) + ' ' + str(top_coor) + ' ' +
+                                   str(right_coor - left_coor) + ' ' + str(bottom_coor - top_coor) + ' 1 ' +
+                                   str(scoring) + '\n')
 
-            full_tensor = np.roll(full_tensor, -1, axis=0)
+            # full_tensor = np.roll(full_tensor, -1, axis=0)
 
             if int(cv2.__version__[0]) == 3:
                 video_writer.write(np.uint8(image))

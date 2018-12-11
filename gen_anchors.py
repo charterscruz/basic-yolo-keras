@@ -64,6 +64,7 @@ def print_anchors(centroids):
     print(r)
 
 def run_kmeans(ann_dims, anchor_num):
+
     ann_num = ann_dims.shape[0]
     iterations = 0
     prev_assignments = np.ones(ann_num)*(-1)
@@ -87,7 +88,7 @@ def run_kmeans(ann_dims, anchor_num):
         #assign samples to centroids
         assignments = np.argmin(distances,axis=1)
 
-        if (assignments == prev_assignments).all() :
+        if (assignments == prev_assignments).all():
             return centroids
 
         #calculate new centroids

@@ -87,8 +87,8 @@ def _main_(args):
 
         if int(cv2.__version__[0]) == 3:
             nb_frames = int(video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
-            width = video_reader.get(cv2.CAP_PROP_FRAME_WIDTH)
-            height = video_reader.get(cv2.CAP_PROP_FRAME_HEIGHT)
+            width = int(video_reader.get(cv2.CAP_PROP_FRAME_WIDTH))
+            height = int(video_reader.get(cv2.CAP_PROP_FRAME_HEIGHT))
             video_writer = cv2.VideoWriter(video_out,
                                            cv2.VideoWriter_fourcc(*'MPEG'),
                                            50.0,
@@ -133,10 +133,10 @@ def _main_(args):
                 cv2.waitKey(1)
 
             for bb in range(0,len(boxes)):
-                left_coor = boxes[bb].xmin * width
-                right_coor = boxes[bb].xmax * width
-                top_coor = boxes[bb].ymin * height
-                bottom_coor = boxes[bb].ymax * height
+                left_coor = boxes[bb].xmin * float(width)
+                right_coor = boxes[bb].xmax * float(width)
+                top_coor = boxes[bb].ymin * float(height)
+                bottom_coor = boxes[bb].ymax * float(height)
                 scoring = boxes[bb].score
 
                 results_file.write(str(i) + ' ' + str(left_coor) + ' ' + str(top_coor) + ' ' +

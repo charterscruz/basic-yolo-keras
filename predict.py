@@ -44,17 +44,14 @@ def _main_(args):
     image_path   = args.input
     display      = args.display
 
-    width = 1920
-    height = 1080
-
     # width = 1024
     # height = 768
 
     if display:
         cv2.namedWindow('img', 0)
-        cv2.resizeWindow('img', 192, 108)
+        cv2.resizeWindow('img', 384, 288)
 
-    results_string = '_3_3_box3'
+    results_string = '_yolo'
 
     with open(config_path) as config_buffer:    
         config = json.load(config_buffer)
@@ -84,22 +81,20 @@ def _main_(args):
         video_out = image_path[:-4] + '_' + results_string + image_path[-4:]
         video_reader = cv2.VideoCapture(image_path)
 
-        frame_h = height
-        frame_w = width
-
         if int(cv2.__version__[0]) == 3:
             nb_frames = int(video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
+            width = video_reader.get(cv2.CAP_PROP_FRAME_WIDTH)
+            height = video_reader.get(cv2.CAP_PROP_FRAME_HEIGHT)
             video_writer = cv2.VideoWriter(video_out,
                                            cv2.VideoWriter_fourcc(*'MPEG'),
                                            50.0,
-                                           (frame_w, frame_h))
+                                           (width, height))
+
         else:
             nb_frames = int(video_reader.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
-            # video_writer = cv2.VideoWriter(video_out,
-            #                                cv2.VideoWriter_fourcc(*'MPEG'),
-            #                                50.0,
-            #                                (frame_w, frame_h))
-            # video_writer = cv2.VideoWriter(video_out, fourcc=None, fps=50, frameSize=(frame_w, frame_h))
+
+            width = video_reader.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)
+            height = video_reader.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)
 
         # OPEN RESULTS  file
         results_file = open(image_path[:-4] + results_string + '.results.txt', 'w+')
